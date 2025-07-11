@@ -1,36 +1,101 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GYM</title>
-  <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cult.fit Inspired Gym System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <nav class="navbar"></nav>
-  <div class="navbar__container">
-    <a href="/" id="navbar__logo">NEXT</a>
-    <div class="navbar__toggle" id="mobile-menu">
-      <span class="bar"></span>
-    <span class="bar"></span>
-    <span class="bar"></span>
-  </div>
-  <ul class="navbar__menu">
-    <li class="navbar__item">
-      <a href="/" class="navbar__links">Home</a>
-    </li>
-       <li class="navbar__item">
-      <a href="/tech.html" class="navbar__links">Tech</a>
-    </li>
-       <li class="navbar__item">
-      <a href="/" class="navbar__links">Products</a>
-    </li>
-    </li>
-       <li class="navbar__btn">
-      <a href="/" class="button">Sign up</a>
-    </li>
-  </ul>
-  </div>
- 
+    <header class="header">
+        <nav class="navbar">
+            <div class="logo">Cult.fit</div>
+            <ul class="nav-links">
+                <li><a href="#" class="active">FITNESS</a></li>
+                <li><a href="#">STORE</a></li>
+                <li><a href="#">CULTPASS</a></li>
+                <li><a href="#">ABOUT</a></li>
+            </ul>
+            <div class="auth-buttons">
+                <a href="login.html" class="btn btn-outline">Login</a>
+                <a href="register.html" class="btn btn-primary">Sign Up</a>
+            </div>
+            <div class="mobile-menu-btn">
+                <i class="fas fa-bars"></i>
+            </div>
+        </nav>
+    </header>
+
+    <section class="hero">
+        <div class="hero-content">
+            <h1>WE ARE<br><span>CULT</span></h1>
+            <p>A fitness movement that is worth breaking a sweat for</p>
+            <a href="#" class="btn btn-primary btn-large">EXPLORE PULSE FIT</a>
+      
+        </div>
+    </section>
+
+    <section class="features">
+        <div class="container">
+            <h2>Why Choose Us?</h2>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <i class="fas fa-dumbbell"></i>
+                    <h3>World-Class Equipment</h3>
+                    <p>State-of-the-art fitness equipment for all your workout needs.</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-users"></i>
+                    <h3>Expert Trainers</h3>
+                    <p>Certified trainers to guide you through your fitness journey.</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-calendar-alt"></i>
+                    <h3>Flexible Scheduling</h3>
+                    <p>Book classes and sessions at your convenience.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">Cult.fit</div>
+                <div class="footer-links">
+                    <div class="link-group">
+                        <h4>Company</h4>
+                        <a href="#">About Us</a>
+                        <a href="#">Careers</a>
+                        <a href="#">Blog</a>
+                    </div>
+                    <div class="link-group">
+                        <h4>Support</h4>
+                        <a href="#">Help Center</a>
+                        <a href="#">Contact Us</a>
+                        <a href="#">FAQ</a>
+                    </div>
+                    <div class="link-group">
+                        <h4>Legal</h4>
+                        <a href="#">Terms</a>
+                        <a href="#">Privacy</a>
+                        <a href="#">Cookie Policy</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy;2025 Pulse.Fit Inspired Gym System. All rights reserved.</p>
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-facebook"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-youtube"></i></a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/script.js"></script>
 </body>
 </html>
