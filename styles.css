@@ -1,10 +1,10 @@
 /* Global Styles */
 :root {
-    --primary-color: #ff3e6c;
-    --secondary-color: #333;
+    --primary-color: #6e0a09;
+    --secondary-color: #8ccdf0;
     --light-color: #f8f9fa;
     --dark-color: #212529;
-    --gray-color: #6c757d;
+    --gray-color: #fb0909;
 }
 
 * {
@@ -15,7 +15,7 @@
 }
 
 body {
-    background-color: #fff;
+    background-color: #3a484d;
     color: var(--dark-color);
     line-height: 1.6;
 }
@@ -125,7 +125,7 @@ body {
 .hero {
     height: 100vh;
     background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('../images/hero-bg.jpg') no-repeat center center/cover;
-    color: white;
+    color: rgb(245, 247, 242);
     display: flex;
     align-items: center;
     text-align: center;
