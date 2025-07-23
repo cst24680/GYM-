@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Register</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="form-container">
+    <h2>Sign Up</h2>
+    <form action="register.php" method="POST">
+      <input type="text" name="name" placeholder="Name" required><br>
+      <input type="number" name="age" placeholder="Age" required><br>
+      <input type="email" name="email" placeholder="Email" required><br>
+      <input type="text" name="phone" placeholder="Phone Number" required><br>
+      <input type="date" name="dob" required><br>
+      <input type="number" name="height" placeholder="Height (cm)" required><br>
+      <input type="number" name="weight" placeholder="Weight (kg)" required><br>
+      <input type="password" name="password" placeholder="Password" required><br>
+      <select name="gender" id="">
+        <option value="">Select Gender</option>
+        <option value="Male">Male</option>
+        <option value="Female">Female</option>
+        <option value="Others">Others</option>
+      </select>
+      <select name="Goal" id="">
+        <option value="">Select Goal</option>
+        <option value="Weight gain">Weight gain</option>
+        <option value="Weight loss">Weight loss</option>
+        <option value="Muscle gain">Muscle gain</option>
+        <option value="Body Recomposition">Body Recomposition</option>
+        <option value="Strength Building">Strength Building</option>
+        <option value=" Flexibility"> Flexibility</option>
+        <option value="Bulking">Bulking</option>
+        <option value="Rehabilitation">Rehabilitation</option>
+        <option value="Others">Others</option>
+      </select>
+      <button type="submit" class="btn-fill">Register</button>
+    </form>
+  </div>
+</body>
+</html>

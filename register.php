@@ -1,67 +1,39 @@
 <?php
-require_once 'includes/config.php';
-require_once 'includes/auth.php';
+include('db.php');
 
-if(is_logged_in()) {
-    redirect('dashboard.php');
-}
+// Get form data
+$Mem_name   = $_POST['name'];
+$Mem_age    = $_POST['age'];
+$Mem_email  = $_POST['email'];
+$Height     = $_POST['height'];
+$Weight     = $_POST['weight'];
+$Mem_dob    = $_POST['dob'];
+$Mem_phno   = $_POST['phone'];
+$password   = $_POST['password'];
+$Mem_gender = $_POST['gender'];
+$Plan_name  = $_POST['Goal'];
 
-$error = '';
-$success = '';
+// Calculate BMI
+$height_m = $Height / 100;
+$BMI = $Weight / ($height_m * $height_m);
 
-if($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $username = sanitize_input($_POST['username']);
-    $email = sanitize_input($_POST['email']);
-    $password = sanitize_input($_POST['password']);
-    $confirm_password = sanitize_input($_POST['confirm_password']);
-    $full_name = sanitize_input($_POST['full_name']);
-    $phone = sanitize_input($_POST['phone']);
-    $address = sanitize_input($_POST['address']);
-    $membership_type = sanitize_input($_POST['membership_type']);
-    $height = sanitize_input($_POST['height']);
-    $weight = sanitize_input($_POST['weight']);
-    $fitness_goals = sanitize_input($_POST['fitness_goals']);
+// Insert into Member_registration table
+$sql = "INSERT INTO `member_registration`(  `Mem_name`, `Mem_age`, `Mem_email`, `Height`, `Weight`, `Mem_dob`, `Mem_phno`, `BMI`, `Plan_name`, `Mem_pass`) VALUES 
+        ('$Mem_name', '$Mem_age', '$Mem_email', '$Height', '$Weight', '$Mem_dob', '$Mem_phno', '$BMI', '$Plan_name','$password')";
 
-    // Validation
-    if(empty($username) || empty($email) || empty($password) || empty($confirm_password) || empty($full_name)) {
-        $error = 'Please fill all required fields.';
-    } elseif($password != $confirm_password) {
-        $error = 'Passwords do not match.';
-    } elseif(strlen($password) < 8) {
-        $error = 'Password must be at least 8 characters long.';
+if (mysqli_query($conn, $sql)) {
+
+    $login_sql = "INSERT INTO login (Email, Password, User_type) 
+                  VALUES ('$Mem_email', '$password', 'member')";
+
+    if (mysqli_query($conn, $login_sql)) {
+        echo "<script>alert('Registration Successful!'); window.location.href='login.html';</script>";
     } else {
-        // Check if username or email already exists
-        $stmt = $conn->prepare("SELECT id FROM users WHERE username = ? OR email = ?");
-        $stmt->execute([$username, $email]);
-        
-        if($stmt->rowCount() > 0) {
-            $error = 'Username or email already exists.';
-        } else {
-            try {
-                $conn->beginTransaction();
-                
-                // Insert into users table
-                $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-                $stmt = $conn->prepare("INSERT INTO users (username, email, password, full_name, phone, address, user_type) VALUES (?, ?, ?, ?, ?, ?, ?)");
-                $stmt->execute([$username, $email, $hashed_password, $full_name, $phone, $address, USER_MEMBER]);
-                $user_id = $conn->lastInsertId();
-                
-                // Insert into member_details
-                $stmt = $conn->prepare("INSERT INTO member_details (user_id, membership_type, join_date, expiry_date, height, weight, fitness_goals) VALUES (?, ?, CURDATE(), DATE_ADD(CURDATE(), INTERVAL 1 YEAR), ?, ?, ?)");
-                $stmt->execute([$user_id, $membership_type, $height, $weight, $fitness_goals]);
-                
-                $conn->commit();
-                $success = 'Registration successful! You can now login.';
-                header("refresh:2;url=login.php");
-            } catch(PDOException $e) {
-                $conn->rollBack();
-                $error = 'Registration failed. Please try again. Error: ' . $e->getMessage();
-            }
-        }
+        echo "Login table error: " . mysqli_error($conn);
     }
+} else {
+    echo "Registration Error: " . mysqli_error($conn);
 }
 
-require_once 'includes/header.php';
+mysqli_close($conn);
 ?>
-
-<!-- Registration form remains similar but with added fields for height, weight, fitness goals -->
