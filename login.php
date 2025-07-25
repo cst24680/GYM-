@@ -1,26 +1,28 @@
 <?php
-include 'db_connect.php';
+include 'db.php';
 
 $email = $_POST['email'];
 $password = $_POST['password'];
 
-// Look up user by email
-$sql = "SELECT * FROM Login WHERE Email = ?";
-$stmt = $conn->prepare($sql);
-$stmt->bind_param("s", $email);
-$stmt->execute();
-$result = $stmt->get_result();
+// Query to find the user by email
+$sql = "SELECT * FROM login WHERE Email = '$email'";
+$result = mysqli_query($conn, $sql);
 
-if ($result->num_rows === 1) {
-    $user = $result->fetch_assoc();
+if (mysqli_num_rows($result) === 1) {
+    $user = mysqli_fetch_assoc($result);
 
-    if (password_verify($password, $user['password'])) {
-        // Password matches
+    // Verify the hashed password
+    if (password_verify($password, $user['Password'])) {
         session_start();
-        $_SESSION['email'] = $email;
+        $_SESSION['email'] = $email; // ✅ Email will be used to link with member_registration
         $_SESSION['user_type'] = $user['User_type'];
 
-        echo "<script>alert('Login Successful as {$user['User_type']}'); window.location.href='dashboard.php';</script>";
+        // ✅ No need to store Login_id anymore
+        // $_SESSION['Login_id'] = $user['Login_id']; // ❌ remove this
+
+        // Redirect to member dashboard
+        header('Location: member_dashboard.php');
+        exit();
     } else {
         echo "<script>alert('Incorrect password!'); window.history.back();</script>";
     }
@@ -28,7 +30,5 @@ if ($result->num_rows === 1) {
     echo "<script>alert('No user found with that email!'); window.history.back();</script>";
 }
 
-$stmt->close();
-$conn->close();
+mysqli_close($conn);
 ?>
-

@@ -17,14 +17,17 @@ $Plan_name  = $_POST['Goal'];
 $height_m = $Height / 100;
 $BMI = $Weight / ($height_m * $height_m);
 
+// Hash the password
+$hashed_password = password_hash($password, PASSWORD_DEFAULT);
+
 // Insert into Member_registration table
-$sql = "INSERT INTO `member_registration`(  `Mem_name`, `Mem_age`, `Mem_email`, `Height`, `Weight`, `Mem_dob`, `Mem_phno`, `BMI`, `Plan_name`, `Mem_pass`) VALUES 
-        ('$Mem_name', '$Mem_age', '$Mem_email', '$Height', '$Weight', '$Mem_dob', '$Mem_phno', '$BMI', '$Plan_name','$password')";
+$sql = "INSERT INTO `member_registration`(`Mem_name`, `Mem_age`, `Mem_email`, `Height`, `Weight`, `Mem_dob`, `Mem_phno`, `BMI`, `Plan_name`, `Mem_pass`) 
+        VALUES ('$Mem_name', '$Mem_age', '$Mem_email', '$Height', '$Weight', '$Mem_dob', '$Mem_phno', '$BMI', '$Plan_name', '$hashed_password')";
 
 if (mysqli_query($conn, $sql)) {
 
     $login_sql = "INSERT INTO login (Email, Password, User_type) 
-                  VALUES ('$Mem_email', '$password', 'member')";
+                  VALUES ('$Mem_email', '$hashed_password', 'member')";
 
     if (mysqli_query($conn, $login_sql)) {
         echo "<script>alert('Registration Successful!'); window.location.href='login.html';</script>";
