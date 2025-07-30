@@ -10,6 +10,16 @@
     <form action="login.php" method="POST">
       <input type="email" name="email" placeholder="Email" required><br>
       <input type="password" name="password" placeholder="Password" required><br>
+      
+      <!-- Added 'required' -->
+      <select name="User_type" required>
+        <option value="">Select user type</option>
+        <option value="member">member</option>
+        <option value="trainer">trainer</option>
+        <option value="dietician">dietician</option>
+        <option value="admin">admin</option>
+      </select><br>
+
       <button type="submit" class="btn-fill">Login</button>
     </form>
   </div>
