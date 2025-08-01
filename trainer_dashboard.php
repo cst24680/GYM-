@@ -114,7 +114,7 @@ $members_result = mysqli_query($conn, $members_query);
         ?>
         <tr>
           <td><?= $mem['Mem_name'] ?></td>
-          <td><?= $mem['Goal'] ?></td>
+          <td><?= $mem['Plan_name'] ?></td>
           <td><?= $plan['Workout_type'] ?? 'Not Assigned' ?></td>
           <td>
             <form method="post" action="assign_workout.php">
