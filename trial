@@ -1,0 +1,342 @@
+<?php
+session_start();
+include "db.php";
+
+if (!isset($_SESSION['Mem_id'])) {
+    header("Location: login.php");
+    exit();
+}
+
+$member_id = $_SESSION['Mem_id'];
+
+// Member details
+$memberQuery = mysqli_query($conn, "SELECT * FROM member_registration WHERE Mem_id = $member_id LIMIT 1");
+$member = mysqli_fetch_assoc($memberQuery);
+
+// Fetch trainer
+$trainer = null;
+if (!empty($member['Trainer_id'])) {
+    $trainerQuery = mysqli_query($conn, "SELECT * FROM trainer WHERE Trainer_id = {$member['Trainer_id']} LIMIT 1");
+    $trainer = mysqli_fetch_assoc($trainerQuery);
+}
+
+// Fetch dietician
+$dietician = null;
+if (!empty($member['Dietician_id'])) {
+    $dieticianQuery = mysqli_query($conn, "SELECT * FROM dietician WHERE Dietician_id = {$member['Dietician_id']} LIMIT 1");
+    $dietician = mysqli_fetch_assoc($dieticianQuery);
+}
+
+// ✅ Default values
+$diet_choice = "Veg";
+$active_section = "dashboard"; // default section
+$message = "";
+
+// ✅ Handle POST requests
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['diet_choice'])) {
+        $diet_choice = $_POST['diet_choice'];
+        $active_section = "dietician";
+    }
+
+    // ✅ Handle Feedback Form
+    if (isset($_POST['feedback_submit'])) {
+        $target_type = $_POST['target_type'];
+        $target_id   = $_POST['target_id'];
+        $rating      = $_POST['rating'];
+        $comments    = $_POST['comments'];
+
+        $sql = "INSERT INTO feedback (Mem_id, target_id, target_type, rating, comments)
+                VALUES ($member_id, $target_id, '$target_type', $rating, '$comments')";
+        if (mysqli_query($conn, $sql)) {
+            $message = "✅ Feedback submitted successfully!";
+            $active_section = "feedback";
+        } else {
+            $message = "❌ Error: " . mysqli_error($conn);
+            $active_section = "feedback";
+        }
+    }
+}
+
+// ✅ Normalize plan name
+$planName = strtolower(trim($member['Plan_name']));
+if ($planName == "weight loss") $planName = "weight loss plan";
+if ($planName == "muscle gain") $planName = "muscle gain plan";
+if ($planName == "general Fitness") $planName = "general fitness plan";
+
+// ✅ Normalize diet choice
+$diet_choice = strtolower(trim($diet_choice));
+if ($diet_choice == "veg") $diet_choice = "veg";
+if ($diet_choice == "non veg" || $diet_choice == "non-veg") $diet_choice = "non-veg";
+
+// ✅ Fetch diet plan
+$dietPlanQuery = mysqli_query($conn, "
+    SELECT * FROM diet_plans
+    WHERE LOWER(TRIM(Plan_name)) LIKE LOWER(TRIM('%$planName%'))
+      AND LOWER(TRIM(Diet_type)) = LOWER(TRIM('$diet_choice'))
+    LIMIT 1
+");
+$dietPlan = ($dietPlanQuery && mysqli_num_rows($dietPlanQuery) > 0) ? mysqli_fetch_assoc($dietPlanQuery) : null;
+
+// Personalized diet plan logic
+function getPersonalizedDescription($bmi, $age, $planDescription) {
+    $lines = explode("\n", $planDescription);
+
+    if ($bmi < 18.5) $bmiStart = "For BMI < 18.5";
+    elseif ($bmi < 25) $bmiStart = "For BMI 18.5-24.9";
+    else $bmiStart = "For BMI ≥ 25";
+
+    $bmiSection = [];
+    $bmiCapture = false;
+    foreach ($lines as $line) {
+        $trim = trim($line);
+        if (stripos($trim, $bmiStart) === 0) { $bmiCapture = true; continue; }
+        if ($bmiCapture && stripos($trim, "For BMI") === 0) break;
+        if ($bmiCapture) $bmiSection[] = $trim;
+    }
+
+    if ($age < 25) $ageStart = "Age < 25";
+    elseif ($age <= 40) $ageStart = "Age 25-40";
+    else $ageStart = "Age > 40";
+
+    $finalSection = [];
+    $ageCapture = false;
+    foreach ($bmiSection as $line) {
+        $trim = trim($line);
+        if (!$ageCapture && stripos($trim, "Age ") !== 0) { $finalSection[] = $trim; continue; }
+        if (stripos($trim, $ageStart) === 0) { $ageCapture = true; continue; }
+        if ($ageCapture && stripos($trim, "Age ") === 0) break;
+        if ($ageCapture) $finalSection[] = $trim;
+    }
+    return implode("\n", $finalSection);
+}
+
+$personalizedDescription = $dietPlan ? getPersonalizedDescription($member['BMI'], $member['Mem_age'], $dietPlan['Description']) : '';
+
+// Fetch assigned workouts
+$schedule_sql = "
+    SELECT ms.Workout_date, p.Workout_type, ms.Notes
+    FROM member_schedule ms
+    JOIN plan_type p ON ms.Plan_type_id = p.Plan_type_id
+    WHERE ms.Mem_id = $member_id
+";
+$schedule_res = mysqli_query($conn, $schedule_sql);
+$events = [];
+while ($row = mysqli_fetch_assoc($schedule_res)) {
+    $events[] = $row;
+}
+?>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Member Dashboard</title>
+    <link rel="stylesheet" href="member.css">
+</head>
+<body onload="showSection('<?php echo $active_section; ?>')">
+
+<div class="sidebar">
+    <h2>Member Panel</h2>
+    <a href="#" onclick="showSection('dashboard')">Dashboard</a>
+    <a href="#" onclick="showSection('dietician')">My Dietician</a>
+    <a href="#" onclick="showSection('trainer')">My Trainer</a>
+    <a href="#" onclick="showSection('calendar')">My Calendar</a>
+    <a href="#" onclick="showSection('feedback')">My Feedback</a>
+    <a href="logout.php" class="logout">Logout</a>
+</div>
+
+<div class="main-content">
+
+    <!-- Dashboard -->
+    <div id="dashboard" class="content-section">
+        <h2>Welcome, <?php echo htmlspecialchars($member['Mem_name']); ?>!</h2>
+        <p><strong>Email:</strong> <?php echo $member['Mem_email']; ?></p>
+        <p><strong>Age:</strong> <?php echo $member['Mem_age']; ?></p>
+        <p><strong>Height:</strong> <?php echo $member['Height']; ?> cm</p>
+        <p><strong>Weight:</strong> <?php echo $member['Weight']; ?> kg</p>
+        <p><strong>BMI:</strong> <?php echo $member['BMI']; ?></p>
+        <p><strong>Goal:</strong> <?php echo $member['Goal_type']; ?></p>
+        <p><strong>Plan:</strong> <?php echo $member['Plan_name']; ?></p>
+    </div>
+
+    <!-- Dietician -->
+    <div id="dietician" class="content-section" style="display:none;">
+        <?php if ($dietician) { ?>
+            <h2>Dietician Details</h2>
+            <p><strong>Name:</strong> <?php echo $dietician['Dietician_name']; ?></p>
+            <p><strong>Email:</strong> <?php echo $dietician['Email']; ?></p>
+            <p><strong>Phone:</strong> <?php echo $dietician['Dietician_phno']; ?></p>
+        <?php } ?>
+
+        <div class="diet-toggle">
+            <form method="post">
+                <button type="submit" name="diet_choice" value="Veg" class="<?php echo ($diet_choice == 'veg') ? 'active' : ''; ?>">Veg Plan</button>
+                <button type="submit" name="diet_choice" value="Non-Veg" class="<?php echo ($diet_choice == 'non-veg') ? 'active' : ''; ?>">Non-Veg Plan</button>
+            </form>
+        </div>
+
+        <?php if ($dietPlan) { ?>
+            <h3>Your <?php echo ucfirst($diet_choice); ?> Diet Plan</h3>
+            <p><strong>Plan Name:</strong> <?php echo $dietPlan['Plan_name']; ?></p>
+            <pre><?php echo htmlspecialchars($personalizedDescription); ?></pre>
+        <?php } else { ?>
+            <p>No <?php echo ucfirst($diet_choice); ?> plan assigned yet. Please wait for your dietician.</p>
+        <?php } ?>
+    </div>
+
+    <!-- Trainer -->
+    <div id="trainer" class="content-section" style="display:none;">
+        <?php if ($trainer) { ?>
+            <h2>Trainer Details</h2>
+            <p><strong>Name:</strong> <?php echo $trainer['Trainer_name']; ?></p>
+            <p><strong>Email:</strong> <?php echo $trainer['Email']; ?></p>
+            <p><strong>Phone:</strong> <?php echo $trainer['Trainer_phno']; ?></p>
+            <p><strong>Gender:</strong> <?php echo $trainer['Trainer_gender']; ?></p>
+            <p><strong>Status:</strong> <?php echo $trainer['Trainer_status']; ?></p>
+            <p><strong>Speciality:</strong> <?php echo $trainer['Speciality']; ?></p>
+        <?php } ?>
+    </div>
+
+    <!-- Calendar -->
+    <div id="calendar" class="content-section" style="display:none;">
+        <h2>My Workout Calendar</h2>
+        <div style="text-align:center;">
+            <button class="nav-btn" onclick="changeMonth(-1)">&#8592; Previous</button>
+            <span id="monthYear"></span>
+            <button class="nav-btn" onclick="changeMonth(1)">Next &#8594;</button>
+        </div>
+        <div id="calendarGrid" class="calendar"></div>
+    </div>
+
+    <!-- Feedback -->
+    <div id="feedback" class="content-section" style="display:none;">
+        <h2>Give Feedback</h2>
+        <?php if ($message) echo "<p>$message</p>"; ?>
+        <form method="post">
+            <label>Target Type:</label>
+            <select name="target_type" required>
+                <option value="">-- Select --</option>
+                <option value="Trainer">Trainer</option>
+                <option value="Dietician">Dietician</option>
+                <option value="Gym">Gym</option>
+            </select><br><br>
+
+            <label>Target ID:</label>
+            <input type="number" name="target_id" placeholder="Enter ID" required><br><br>
+
+            <label>Rating (1-5):</label>
+            <input type="number" name="rating" min="1" max="5" required><br><br>
+
+            <label>Comments:</label><br>
+            <textarea name="comments" rows="4" cols="50" placeholder="Write your feedback..."></textarea><br><br>
+
+            <button type="submit" name="feedback_submit">Submit Feedback</button>
+        </form>
+
+        <hr>
+        <h2>My Previous Feedback</h2>
+        <?php
+        $feedbackQuery = mysqli_query($conn, "SELECT * FROM feedback WHERE Mem_id = $member_id ORDER BY created_at DESC");
+        if ($feedbackQuery && mysqli_num_rows($feedbackQuery) > 0) {
+            echo "<table border='1' cellpadding='8' cellspacing='0' style='width:100%; border-collapse:collapse;'>";
+            echo "<tr style='background:#222; color:orange;'>
+                    <th>ID</th>
+                    <th>Target Type</th>
+                    <th>Target ID</th>
+                    <th>Rating</th>
+                    <th>Comments</th>
+                    <th>Date</th>
+                  </tr>";
+            while ($fb = mysqli_fetch_assoc($feedbackQuery)) {
+                echo "<tr>
+                        <td>{$fb['feedback_id']}</td>
+                        <td>{$fb['target_type']}</td>
+                        <td>{$fb['target_id']}</td>
+                        <td>{$fb['rating']}</td>
+                        <td>".htmlspecialchars($fb['comments'])."</td>
+                        <td>{$fb['created_at']}</td>
+                      </tr>";
+            }
+            echo "</table>";
+        } else {
+            echo "<p>No feedback submitted yet.</p>";
+        }
+        ?>
+    </div>
+
+</div>
+
+<script>
+function showSection(sectionId) {
+    document.querySelectorAll('.content-section').forEach(sec => sec.style.display = 'none');
+    document.getElementById(sectionId).style.display = 'block';
+}
+
+// Events from PHP
+const events = <?php echo json_encode($events); ?>;
+const today = new Date();
+let year = today.getFullYear();
+let month = today.getMonth();
+
+const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+function loadCalendar(events) {
+    document.getElementById("monthYear").innerText = `${monthNames[month]} ${year}`;
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month+1, 0).getDate();
+    const calendar = document.getElementById("calendarGrid");
+    calendar.innerHTML = "";
+
+    for (let i = 0; i < firstDay; i++) {
+        calendar.innerHTML += `<div class='day'></div>`;
+    }
+
+    for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = `${year}-${String(month+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+        let dayEvents = events.filter(e => e.Workout_date === dateStr);
+        let eventHTML = dayEvents.map(e => `<div class="event">${e.Notes || "No description"}</div>`).join("");
+        calendar.innerHTML += `
+          <div class="day" onclick="showModal('${dateStr}')">
+            <div class="date">${d}</div>
+            ${eventHTML}
+          </div>`;
+    }
+}
+
+function changeMonth(step) {
+    month += step;
+    if (month < 0) { month = 11; year--; }
+    if (month > 11) { month = 0; year++; }
+    loadCalendar(events);
+}
+
+function showModal(dateStr) {
+    let dayEvents = events.filter(e => e.Workout_date === dateStr);
+    document.getElementById("modalDate").innerText = `Workouts on ${dateStr}`;
+    if (dayEvents.length > 0) {
+        document.getElementById("modalEvents").innerHTML = dayEvents.map(e =>
+            `<p><strong>${e.Notes || "No description"}</strong><br><small>(${e.Workout_type})</small></p>`
+        ).join("");
+    } else {
+        document.getElementById("modalEvents").innerHTML = "<p>No workouts assigned.</p>";
+    }
+    document.getElementById("eventModal").style.display = "flex";
+}
+
+function closeModal() {
+    document.getElementById("eventModal").style.display = "none";
+}
+
+loadCalendar(events);
+</script>
+
+<!-- Popup Modal -->
+<div id="eventModal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="closeModal()">&times;</span>
+    <h3 id="modalDate"></h3>
+    <div id="modalEvents"></div>
+  </div>
+</div>
+
+</body>
+</html>

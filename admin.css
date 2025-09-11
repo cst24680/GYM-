@@ -1,0 +1,170 @@
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: linear-gradient(145deg, #0d0d0d, #1a1a1a);
+    color: #fff;
+}
+
+/* Sidebar */
+.sidebar {
+    position: fixed;
+    width: 240px;
+    height: 100%;
+    background: rgba(20, 20, 20, 0.95);
+    backdrop-filter: blur(6px);
+    padding: 25px;
+    border-right: 1px solid rgba(255, 165, 0, 0.3);
+}
+
+.sidebar h2 {
+    color: #ff9800;
+    margin-bottom: 25px;
+    font-size: 22px;
+}
+
+.sidebar a {
+    display: block;
+    padding: 12px 15px;
+    margin: 8px 0;
+    color: #ddd;
+    text-decoration: none;
+    border-radius: 6px;
+    transition: 0.3s;
+    font-weight: 500;
+}
+
+.sidebar a:hover,
+.sidebar a.active {
+    background: #ff9800;
+    color: black;
+}
+
+/* Logout button */
+.logout {
+    background: #e53935;
+    text-align: center;
+    margin-top: 20px;
+}
+
+/* Content */
+.content {
+    margin-left: 300px;
+    padding: 30px;
+}
+
+h1 {
+    color: #ff9800;
+    font-size: 28px;
+}
+
+/* Buttons */
+button {
+    background: #ff9800;
+    color: black;
+    border: none;
+    padding: 8px 14px;
+    font-size: 14px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+button:hover {
+    background: #e68900;
+}
+
+/* Tables inside card container */
+.section {
+    margin-top: 20px;
+    background: rgba(40, 40, 40, 0.6);
+    padding: 15px;
+    border-radius: 10px;
+    backdrop-filter: blur(5px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    margin-right: 20px; 
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+th {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 2px solid #ff9800;
+    font-weight: bold;
+}
+
+td {
+    padding: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+tr:hover {
+    background: rgba(255, 152, 0, 0.1);
+}
+
+/* Modal styles */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.7);
+    justify-content: center;
+    align-items: center;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+.modal-content {
+    background: rgba(30, 30, 30, 0.95);
+    padding: 30px; /* more space inside */
+    border-radius: 12px;
+    width: 500px; /* make it wider */
+    max-width: 90%; /* prevent overflow on small screens */
+    animation: slideUp 0.4s ease;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+    display: flex;
+    flex-direction: column;
+    gap: 15px; /* equal vertical spacing */
+}
+
+.modal-content h3 {
+    color: #ff9800;
+    margin-bottom: 10px;
+    font-size: 24px; /* slightly larger heading */
+    text-align: center;
+}
+
+/* Inputs with equal padding and full width */
+.modal-content input,
+.modal-content select {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 6px;
+    background: rgba(50, 50, 50, 0.9);
+    color: white;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+/* Buttons */
+.modal-content .button-group {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.modal-content button {
+    flex: 1;
+    padding: 10px;
+    font-size: 15px;
+    font-weight: bold;
+}

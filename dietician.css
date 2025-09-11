@@ -1,0 +1,132 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #000;
+    color: #fff;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 220px;
+    background: #111;
+    color: orange;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    padding: 20px;
+}
+
+.sidebar h2 {
+    color: orange;
+    margin-bottom: 20px;
+}
+.sidebar a {
+    display: block;
+    color: #fff;
+    padding: 10px;
+    text-decoration: none;
+    margin: 5px 0;
+    border-radius: 4px;
+}
+.sidebar a:hover {
+    background: orange;
+    color: #000;
+}
+.sidebar .logout {
+    background: red;
+    color: #fff;
+    margin-top: 20px;
+    text-align: center;
+}
+.sidebar .logout:hover {
+    background: darkred;
+}
+
+/* Main Content */
+.main {
+    margin-left: 240px; /* pushes main content right so it’s not hidden */
+    padding: 20px;
+    color: white;
+}
+h1, h2 {
+    color: orange;
+}
+.box {
+    background: #111;
+    padding: 15px;
+    margin: 15px 0;
+    border-radius: 8px;
+    box-shadow: 0 0 10px orange;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+th, td {
+    padding: 10px;
+    border-bottom: 1px solid orange;
+    vertical-align: top;
+}
+.flash {
+    background: #0d2810;
+    color: #b8ffb8;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 4px;
+}
+.btn {
+    background:orange;
+    color: #000;
+    padding: 5px 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 8px;
+}
+.btn:hover {
+    background: orange;
+}
+input, textarea, select {
+    width: 100%;
+    padding: 6px;
+    margin-top: 5px;
+    border-radius: 4px;
+    border: 1px solid #333;
+    background: #0b0b0b;
+    color: #fff;
+}
+
+/* Style for predefined plans */
+.plans {
+    margin-top: 15px;
+}
+
+.plan-item {
+    margin-bottom: 15px;   /* space between plans */
+    padding: 10px;
+    border: 1px solid #333;
+    border-radius: 6px;
+    background: #111;
+}
+
+.plan-item summary {
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    color: orange;
+    outline: none;
+    list-style: none;
+}
+
+.plan-item summary:hover {
+    color: #b8ffb8;
+}
+
+.plan-item p {
+    margin: 10px 0 0 20px; /* indent inside expanded content */
+    color: #ddd;
+    line-height: 1.5;
+    font-size: 14px;
+}
+
