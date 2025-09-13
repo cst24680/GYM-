@@ -1,298 +1,358 @@
 <?php
 session_start();
+include "db.php";
+include "helpers.php";
 
-if (!isset($_SESSION['email'])) {
-    echo "You are not logged in.";
+if (!isset($_SESSION['Mem_id'])) {
+    header("Location: login.php");
     exit();
 }
 
-include('db.php');
-$email = $_SESSION['email'];
+$member_id = $_SESSION['Mem_id'];
 
-$conn = mysqli_connect("localhost", "root", "", "gym_db");
+// Member details
+$memberQuery = mysqli_query($conn, "SELECT * FROM member_registration WHERE Mem_id = $member_id LIMIT 1");
+$member = mysqli_fetch_assoc($memberQuery);
 
-$member_query = "SELECT * FROM member_registration WHERE Mem_email = '$email'";
-$member_result = mysqli_query($conn, $member_query);
-$member = mysqli_fetch_assoc($member_result);
-
-if (!$member) {
-    echo "Member not found.";
-    exit;
-}
-
+// Fetch trainer
 $trainer = null;
 if (!empty($member['Trainer_id'])) {
-    $trainer_query = "SELECT * FROM trainer WHERE Trainer_id = " . $member['Trainer_id'];
-    $trainer_result = mysqli_query($conn, $trainer_query);
-    $trainer = mysqli_fetch_assoc($trainer_result);
+    $trainerQuery = mysqli_query($conn, "SELECT * FROM trainer WHERE Trainer_id = {$member['Trainer_id']} LIMIT 1");
+    $trainer = mysqli_fetch_assoc($trainerQuery);
 }
 
+// Fetch dietician
 $dietician = null;
 if (!empty($member['Dietician_id'])) {
-    $dietician_query = "SELECT * FROM dietician_login WHERE Dietician_id = " . $member['Dietician_id'];
-    $dietician_result = mysqli_query($conn, $dietician_query);
-    $dietician = mysqli_fetch_assoc($dietician_result);
+    $dieticianQuery = mysqli_query($conn, "SELECT * FROM dietician WHERE Dietician_id = {$member['Dietician_id']} LIMIT 1");
+    $dietician = mysqli_fetch_assoc($dieticianQuery);
 }
 
-$diet = null;
-$diet_query = "SELECT * FROM diet_plans WHERE Mem_id = " . $member['Mem_id'];
-$diet_result = mysqli_query($conn, $diet_query);
-$diet = mysqli_fetch_assoc($diet_result);
+// ✅ Default values
+$diet_choice = "Veg";
+$active_section = "dashboard"; // default section
+$message = "";
 
-$workout = null;
-$plan_query = "SELECT * FROM plan_type WHERE Mem_id = " . $member['Mem_id'];
-$workout_result = mysqli_query($conn, $plan_query);
-$workout = mysqli_fetch_assoc($workout_result);
+// ✅ Handle POST requests
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['diet_choice'])) {
+        $diet_choice = $_POST['diet_choice'];
+        $active_section = "dietician";
+    }
+
+    // ✅ Handle Feedback Form
+    if (isset($_POST['feedback_submit'])) {
+        $target_type = $_POST['target_type'];
+        $target_id   = $_POST['target_id'];
+        $rating      = $_POST['rating'];
+        $comments    = $_POST['comments'];
+
+        $sql = "INSERT INTO feedback (Mem_id, target_id, target_type, rating, comments, created_at)
+                VALUES ($member_id, $target_id, '$target_type', $rating, '$comments', NOW())";
+        if (mysqli_query($conn, $sql)) {
+            $message = "✅ Feedback submitted successfully!";
+            $active_section = "feedback";
+        } else {
+            $message = "❌ Error: " . mysqli_error($conn);
+            $active_section = "feedback";
+        }
+    }
+}
+
+// ✅ Determine BMI & Age categories
+$bmiCategory = getBMICategory($member['BMI']);
+$ageCategory = getAgeCategory($member['Mem_age']);
+
+// ✅ Normalize diet choice
+$diet_choice = strtolower(trim($diet_choice));
+if ($diet_choice === "veg") $diet_choice = "Veg";
+if (in_array($diet_choice, ["non veg", "non-veg", "nonveg"])) $diet_choice = "Non-Veg";
+
+// ✅ Fetch latest assigned diet plan
+$planQuery = mysqli_query($conn, "
+    SELECT Diet_plan_id, Plan_name, Diet_type, Description, BMI_Category, Age_Category, Dietician_id
+    FROM diet_plans
+    WHERE Mem_id = {$member['Mem_id']} 
+      AND Diet_type = '{$diet_choice}'
+    ORDER BY Diet_plan_id DESC
+    LIMIT 1
+");
+$dietPlan = mysqli_fetch_assoc($planQuery);
+
+if (!$dietPlan) {
+    // fallback → use templates
+    $dietPlan = findTemplate($conn, $member['Goal_type'], $bmiCategory, $ageCategory, $diet_choice);
+}
+
+// Fetch assigned workouts (for calendar + trainer tab)
+$schedule_sql = "
+    SELECT ms.Workout_date, p.Workout_type, ms.Notes
+    FROM member_schedule ms
+    JOIN plan_type p ON ms.Plan_type_id = p.Plan_type_id
+    WHERE ms.Mem_id = $member_id
+    ORDER BY ms.Workout_date ASC
+";
+$schedule_res = mysqli_query($conn, $schedule_sql);
+$events = [];
+while ($row = mysqli_fetch_assoc($schedule_res)) {
+    $events[] = $row;
+}
 ?>
-
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>GymX Member Dashboard</title>
-    <style>
-        :root {
-            --bg-color: #fdfbf6;
-            --text-color: #222;
-            --card-bg: white;
-            --header-bg: #e50914;
-            --link-color: #e50914;
-            --btn-bg: #333;
-            --btn-hover: #555;
-        }
-
-        body.dark-theme {
-            --bg-color: #0d0d0d;
-            --text-color: #f5f5f5;
-            --card-bg: #2b2b2b;
-            --header-bg: #121212;
-            --link-color: #e50914;
-            --btn-bg: #e50914;
-            --btn-hover: #c40811;
-        }
-
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            background-color: var(--bg-color);
-            margin: 0;
-            padding: 0;
-            color: var(--text-color);
-            transition: background 0.3s ease, color 0.3s ease;
-        }
-
-        header {
-            background-color: var(--header-bg);
-            color: #fff;
-            padding: 20px 40px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 2px solid var(--link-color);
-        }
-
-        header h1 {
-            font-size: 26px;
-        }
-
-        nav ul {
-            list-style: none;
-            display: flex;
-            gap: 20px;
-            margin: 0;
-            padding: 0;
-        }
-
-        nav ul li a {
-            color: #ffffff;
-            text-decoration: none;
-            font-weight: bold;
-        }
-
-        nav ul li a:hover {
-            color: var(--link-color);
-        }
-
-        .theme-btn {
-            background-color: var(--btn-bg);
-            color: #fff;
-            padding: 8px 16px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            margin-left: 20px;
-        }
-
-        .theme-btn:hover {
-            background-color: var(--btn-hover);
-        }
-
-        .hero {
-            display: flex;
-            justify-content: space-between;
-            padding: 40px;
-            background-color: var(--card-bg);
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .hero-text {
-            max-width: 500px;
-        }
-
-        .hero-text h2 {
-            font-size: 36px;
-        }
-
-        .hero-text p {
-            font-size: 16px;
-            margin-top: 10px;
-        }
-
-        .hero-text a {
-            display: inline-block;
-            margin-top: 20px;
-            background-color: var(--link-color);
-            color: #fff;
-            padding: 10px 20px;
-            text-decoration: none;
-            border-radius: 5px;
-        }
-
-        .hero-text a:hover {
-            background-color: var(--btn-hover);
-        }
-
-        .hero img {
-            max-width: 350px;
-            border-radius: 10px;
-        }
-
-        .dashboard {
-            padding: 40px;
-        }
-
-        .dashboard h3 {
-            text-align: center;
-            font-size: 28px;
-            margin-bottom: 30px;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 30px;
-        }
-
-        .card {
-            background-color: var(--card-bg);
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        }
-
-        .card h4 {
-            font-size: 20px;
-            margin-bottom: 10px;
-            color: var(--link-color);
-        }
-
-        .card p {
-            margin: 5px 0;
-            font-size: 15px;
-        }
-
-        footer {
-            text-align: center;
-            padding: 20px;
-            color: #aaa;
-            background-color: var(--header-bg);
-            margin-top: 40px;
-            font-size: 14px;
-        }
-    </style>
+    <title>Member Dashboard</title>
+    <link rel="stylesheet" href="member.css">
 </head>
-<body>
+<body onload="showSection('<?php echo $active_section; ?>')">
 
-<header>
-    <h1>🏋️‍♂️ GymX</h1>
-    <nav>
-        <ul>
-            <li><a href="#">Home</a></li>
-            <li><a href="#plans">Workout</a></li>
-            <li><a href="#plans">Diet Plan</a></li>
-            <li><a href="logout.php">Logout</a></li>
-        </ul>
-    </nav>
-    <button class="theme-btn" id="themeToggle" onclick="toggleTheme()">🌙 Dark Mode</button>
-</header>
+<div class="sidebar">
+    <h2>Member Panel</h2>
+    <a href="#" onclick="showSection('dashboard')">Dashboard</a>
+    <a href="#" onclick="showSection('dietician')">My Dietician</a>
+    <a href="#" onclick="showSection('trainer')">My Trainer</a>
+    <a href="#" onclick="showSection('calendar')">My Calendar</a>
+    <a href="#" onclick="showSection('feedback')">My Feedback</a>
+    <a href="logout.php" class="logout">Logout</a>
+</div>
 
-<section class="hero">
-    <div class="hero-text">
+<div class="main-content">
+
+    <!-- Dashboard -->
+    <div id="dashboard" class="content-section">
         <h2>Welcome, <?php echo htmlspecialchars($member['Mem_name']); ?>!</h2>
-        <p>This is your personalized fitness dashboard. Track your progress and stay committed!</p>
-        <a href="#plans">View Your Plans</a>
+        <p><strong>Email:</strong> <?php echo $member['Mem_email']; ?></p>
+        <p><strong>Age:</strong> <?php echo $member['Mem_age']; ?></p>
+        <p><strong>Height:</strong> <?php echo $member['Height']; ?> cm</p>
+        <p><strong>Weight:</strong> <?php echo $member['Weight']; ?> kg</p>
+        <p><strong>BMI:</strong> <?php echo $member['BMI']; ?> (<?php echo $bmiCategory; ?>)</p>
+        <p><strong>Goal:</strong> <?php echo $member['Goal_type']; ?></p>
     </div>
-    <img src="images/g.png.png" alt="Gym Image" >
-    
-</section>
 
-<section class="dashboard" id="plans">
-    <h3>Your Dashboard</h3>
-    <div class="grid">
-        <div class="card">
-            <h4>Personal Info</h4>
-            <p><strong>Age:</strong> <?= $member['Mem_age'] ?></p>
-            <p><strong>DOB:</strong> <?= $member['Mem_dob'] ?></p>
-            <p><strong>Phone:</strong> <?= $member['Mem_phno'] ?></p>
-            <p><strong>Height:</strong> <?= $member['Height'] ?> cm</p>
-            <p><strong>Weight:</strong> <?= $member['Weight'] ?> kg</p>
-            <p><strong>BMI:</strong> <?= $member['BMI'] ?></p>
-            <p><strong>Plan:</strong> <?= $member['Plan_name'] ?></p>
+    <!-- Dietician -->
+    <div id="dietician" class="content-section" style="display:none;">
+        <?php if ($dietician) { ?>
+            <h2>Dietician Details</h2>
+            <p><strong>Name:</strong> <?php echo $dietician['Dietician_name']; ?></p>
+            <p><strong>Email:</strong> <?php echo $dietician['Email']; ?></p>
+            <p><strong>Phone:</strong> <?php echo $dietician['Dietician_phno']; ?></p>
+        <?php } ?>
+
+        <div class="diet-toggle">
+            <form method="post">
+                <button type="submit" name="diet_choice" value="Veg" class="<?php echo ($diet_choice == 'Veg') ? 'active' : ''; ?>">Veg Plan</button>
+                <button type="submit" name="diet_choice" value="Non-Veg" class="<?php echo ($diet_choice == 'Non-Veg') ? 'active' : ''; ?>">Non-Veg Plan</button>
+            </form>
         </div>
 
-        <div class="card">
-            <h4>Your Trainer</h4>
-            <p><strong>Name:</strong> <?= $trainer['Trainer_name'] ?? 'N/A' ?></p>
-            <p><strong>Email:</strong> <?= $trainer['Trainer_email'] ?? 'N/A' ?></p>
-            <p><strong>Phone:</strong> <?= $trainer['Trainer_phno'] ?? 'N/A' ?></p>
-        </div>
-
-        <div class="card">
-            <h4>Your Dietician</h4>
-            <p><strong>Name:</strong> <?= $dietician['Dietician_name'] ?? 'N/A' ?></p>
-            <p><strong>Email:</strong> <?= $dietician['Dietician_email'] ?? 'N/A' ?></p>
-            <p><strong>Phone:</strong> <?= $dietician['Dietician_phno'] ?? 'N/A' ?></p>
-        </div>
-
-        <div class="card">
-            <h4>Plans</h4>
-            <p><strong>Workout:</strong> <?= $workout['Workout_type'] ?? 'Not Assigned' ?></p>
-            <p><strong>Diet:</strong> <?= $diet['Diet'] ?? 'No diet assigned' ?></p>
-        </div>
+        <?php if ($dietPlan) { ?>
+            <h3>Your <?php echo ucfirst($diet_choice); ?> Diet Plan</h3>
+            <p><strong>Goal:</strong> <?php echo $member['Goal_type']; ?></p>
+            <?php if (!empty($dietPlan['BMI_Category']) && !empty($dietPlan['Age_Category'])) { ?>
+                <p><strong>BMI Category:</strong> <?php echo $dietPlan['BMI_Category']; ?></p>
+                <p><strong>Age Category:</strong> <?php echo $dietPlan['Age_Category']; ?></p>
+            <?php } ?>
+            <pre><?php echo htmlspecialchars($dietPlan['Description']); ?></pre>
+        <?php } else { ?>
+            <p>No <?php echo ucfirst($diet_choice); ?> plan available for your profile yet.</p>
+        <?php } ?>
     </div>
-</section>
 
-<footer>
-    &copy; <?= date('Y') ?> GymX Fitness. Stay strong 💪.
-</footer>
+    <!-- Trainer -->
+    <div id="trainer" class="content-section" style="display:none;">
+        <?php if ($trainer) { ?>
+            <h2>Trainer Details</h2>
+            <p><strong>Name:</strong> <?php echo $trainer['Trainer_name']; ?></p>
+            <p><strong>Email:</strong> <?php echo $trainer['Email']; ?></p>
+            <p><strong>Phone:</strong> <?php echo $trainer['Trainer_phno']; ?></p>
+            <p><strong>Gender:</strong> <?php echo $trainer['Trainer_gender']; ?></p>
+            <p><strong>Status:</strong> <?php echo $trainer['Trainer_status']; ?></p>
+            <p><strong>Speciality:</strong> <?php echo $trainer['Speciality']; ?></p>
+
+            <h3>Assigned Workout Routine</h3>
+            <?php if (!empty($events)) { ?>
+                <table border="1" cellpadding="8" cellspacing="0" style="width:100%; border-collapse:collapse;">
+                    <tr style="background:#222; color:limegreen;">
+                        <th>Date</th>
+                        <th>Workout Type</th>
+                        <th>Notes</th>
+                    </tr>
+                    <?php foreach ($events as $e) { ?>
+                        <tr>
+                            <td><?php echo $e['Workout_date']; ?></td>
+                            <td><?php echo $e['Workout_type']; ?></td>
+                            <td><?php echo $e['Notes'] ?: 'No description'; ?></td>
+                        </tr>
+                    <?php } ?>
+                </table>
+            <?php } else { ?>
+                <p>No workouts assigned yet.</p>
+            <?php } ?>
+        <?php } else { ?>
+            <p>No trainer assigned yet.</p>
+        <?php } ?>
+    </div>
+
+    <!-- Calendar -->
+    <div id="calendar" class="content-section" style="display:none;">
+        <h2>My Workout Calendar</h2>
+        <div style="text-align:center;">
+            <button class="nav-btn" onclick="changeMonth(-1)">&#8592; Previous</button>
+            <span id="monthYear"></span>
+            <button class="nav-btn" onclick="changeMonth(1)">Next &#8594;</button>
+        </div>
+        <div id="calendarGrid" class="calendar"></div>
+    </div>
+
+    <!-- Feedback -->
+    <div id="feedback" class="content-section" style="display:none;">
+        <h2>Give Feedback</h2>
+        <?php if ($message) echo "<p>$message</p>"; ?>
+        <form method="post">
+            <label>Target Type:</label>
+            <select name="target_type" id="target_type" required onchange="setTargetId()">
+                <option value="">-- Select --</option>
+                <?php if ($trainer) { ?>
+                    <option value="Trainer">Trainer (<?php echo $trainer['Trainer_name']; ?>)</option>
+                <?php } ?>
+                <?php if ($dietician) { ?>
+                    <option value="Dietician">Dietician (<?php echo $dietician['Dietician_name']; ?>)</option>
+                <?php } ?>
+                <option value="Gym">Gym</option>
+            </select><br><br>
+
+            <!-- Hidden Target ID (auto-filled) -->
+            <input type="hidden" id="target_id" name="target_id" value="">
+
+            <label>Rating (1-5):</label>
+            <input type="number" name="rating" min="1" max="5" required><br><br>
+
+            <label>Comments:</label><br>
+            <textarea name="comments" rows="4" cols="50" placeholder="Write your feedback..."></textarea><br><br>
+
+            <button type="submit" name="feedback_submit">Submit Feedback</button>
+        </form>
+
+        <hr>
+        <h2>My Previous Feedback</h2>
+        <?php
+        $feedbackQuery = mysqli_query($conn, "SELECT * FROM feedback WHERE Mem_id = $member_id ORDER BY created_at DESC");
+        if ($feedbackQuery && mysqli_num_rows($feedbackQuery) > 0) {
+            echo "<table border='1' cellpadding='8' cellspacing='0' style='width:100%; border-collapse:collapse;'>";
+            echo "<tr style='background:#222; color:orange;'>
+                    <th>ID</th>
+                    <th>Target Type</th>
+                    <th>Target ID</th>
+                    <th>Rating</th>
+                    <th>Comments</th>
+                    <th>Date</th>
+                  </tr>";
+            while ($fb = mysqli_fetch_assoc($feedbackQuery)) {
+                echo "<tr>
+                        <td>{$fb['feedback_id']}</td>
+                        <td>{$fb['target_type']}</td>
+                        <td>{$fb['target_id']}</td>
+                        <td>{$fb['rating']}</td>
+                        <td>".htmlspecialchars($fb['comments'])."</td>
+                        <td>{$fb['created_at']}</td>
+                      </tr>";
+            }
+            echo "</table>";
+        } else {
+            echo "<p>No feedback submitted yet.</p>";
+        }
+        ?>
+    </div>
+
+</div>
 
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const theme = localStorage.getItem("theme");
-        if (theme === "dark") {
-            document.body.classList.add("dark-theme");
-            document.getElementById("themeToggle").innerText = "☀️ Light Mode";
-        }
-    });
+function showSection(sectionId) {
+    document.querySelectorAll('.content-section').forEach(sec => sec.style.display = 'none');
+    document.getElementById(sectionId).style.display = 'block';
+}
 
-    function toggleTheme() {
-        document.body.classList.toggle("dark-theme");
-        const isDark = document.body.classList.contains("dark-theme");
-        document.getElementById("themeToggle").innerText = isDark ? "☀️ Light Mode" : "🌙 Dark Mode";
-        localStorage.setItem("theme", isDark ? "dark" : "light");
+// Auto-fill Target ID
+function setTargetId() {
+    const targetType = document.getElementById("target_type").value;
+    let targetIdField = document.getElementById("target_id");
+    if (targetType === "Trainer") {
+        targetIdField.value = "<?php echo $trainer ? $trainer['Trainer_id'] : ''; ?>";
+    } else if (targetType === "Dietician") {
+        targetIdField.value = "<?php echo $dietician ? $dietician['Dietician_id'] : ''; ?>";
+    } else if (targetType === "Gym") {
+        targetIdField.value = "0";
+    } else {
+        targetIdField.value = "";
     }
+}
+
+// Calendar data
+const events = <?php echo json_encode($events); ?>;
+const today = new Date();
+let year = today.getFullYear();
+let month = today.getMonth();
+
+const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+function loadCalendar(events) {
+    document.getElementById("monthYear").innerText = `${monthNames[month]} ${year}`;
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month+1, 0).getDate();
+    const calendar = document.getElementById("calendarGrid");
+    calendar.innerHTML = "";
+
+    for (let i = 0; i < firstDay; i++) {
+        calendar.innerHTML += `<div class='day'></div>`;
+    }
+
+    for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = `${year}-${String(month+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+        let dayEvents = events.filter(e => e.Workout_date === dateStr);
+        let eventHTML = dayEvents.map(e => `<div class="event">${e.Notes || "No description"}</div>`).join("");
+        calendar.innerHTML += `
+          <div class="day" onclick="showModal('${dateStr}')">
+            <div class="date">${d}</div>
+            ${eventHTML}
+          </div>`;
+    }
+}
+
+function changeMonth(step) {
+    month += step;
+    if (month < 0) { month = 11; year--; }
+    if (month > 11) { month = 0; year++; }
+    loadCalendar(events);
+}
+
+function showModal(dateStr) {
+    let dayEvents = events.filter(e => e.Workout_date === dateStr);
+    document.getElementById("modalDate").innerText = `Workouts on ${dateStr}`;
+    if (dayEvents.length > 0) {
+        document.getElementById("modalEvents").innerHTML = dayEvents.map(e =>
+            `<p><strong>${e.Notes || "No description"}</strong><br><small>(${e.Workout_type})</small></p>`
+        ).join("");
+    } else {
+        document.getElementById("modalEvents").innerHTML = "<p>No workouts assigned.</p>";
+    }
+    document.getElementById("eventModal").style.display = "flex";
+}
+
+function closeModal() {
+    document.getElementById("eventModal").style.display = "none";
+}
+
+loadCalendar(events);
 </script>
+
+<!-- Popup Modal -->
+<div id="eventModal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="closeModal()">&times;</span>
+    <h3 id="modalDate"></h3>
+    <div id="modalEvents"></div>
+  </div>
+</div>
 
 </body>
 </html>
