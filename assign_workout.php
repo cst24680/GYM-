@@ -1,19 +1,26 @@
 <?php
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $mem_id = $_POST['Mem_id'];
-    $workout = $_POST['Workout_type'];
+session_start();
+include "db.php";
 
-    $conn = mysqli_connect("localhost", "root", "", "gym_db");
-
-    // check if a plan already exists
-    $check = mysqli_query($conn, "SELECT * FROM plan_type WHERE Mem_id = $mem_id");
-    if (mysqli_num_rows($check) > 0) {
-        mysqli_query($conn, "UPDATE plan_type SET Workout_type = '$workout' WHERE Mem_id = $mem_id");
-    } else {
-        mysqli_query($conn, "INSERT INTO plan_type (Mem_id, Workout_type) VALUES ($mem_id, '$workout')");
-    }
-
-    header("Location: trainer_dashboard.php");
+if (!isset($_SESSION['Trainer_id'])) {
+    header("Location: login.php");
     exit();
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $trainer_id = $_SESSION['Trainer_id'];
+    $mem_id = $_POST['Mem_id'];
+    $plan_type_id = $_POST['Plan_type_id'];
+    $workout_date = $_POST['Workout_date'];
+    $description = $_POST['Workout_description'];
+
+    $sql = "INSERT INTO member_schedule (Trainer_id, Mem_id, Plan_type_id, Workout_date, Notes) 
+            VALUES ('$trainer_id', '$mem_id', '$plan_type_id', '$workout_date', '$description')";
+
+    if (mysqli_query($conn, $sql)) {
+        echo "<script>alert('Workout assigned successfully!'); window.location.href='trainer_dashboard.php';</script>";
+    } else {
+        echo "Error: " . mysqli_error($conn);
+    }
 }
 ?>
