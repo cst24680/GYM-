@@ -235,6 +235,47 @@ while ($row = mysqli_fetch_assoc($schedule_res)) {
         <?php } ?>
     </div>
 
+    <!-- Dashboard -->
+    <div id="dashboard" class="content-section">
+        <h2>Welcome, <?php echo htmlspecialchars($member['Mem_name']); ?>!</h2>
+        <p><strong>Email:</strong> <?php echo $member['Mem_email']; ?></p>
+        <p><strong>Age:</strong> <?php echo $member['Mem_age']; ?></p>
+        <p><strong>Height:</strong> <?php echo $member['Height']; ?> cm</p>
+        <p><strong>Weight:</strong> <?php echo $member['Weight']; ?> kg</p>
+        <p><strong>BMI:</strong> <?php echo $member['BMI']; ?> (<?php echo $bmiCategory; ?>)</p>
+        <p><strong>Goal:</strong> <?php echo $member['Goal_type']; ?></p>
+    </div>
+
+    <!-- Dietician -->
+    <div id="dietician" class="content-section" style="display:none;">
+        <?php if ($dietician) { ?>
+            <h2>Dietician Details</h2>
+            <p><strong>Name:</strong> <?php echo $dietician['Dietician_name']; ?></p>
+            <p><strong>Email:</strong> <?php echo $dietician['Email']; ?></p>
+            <p><strong>Phone:</strong> <?php echo $dietician['Dietician_phno']; ?></p>
+        <?php } ?>
+
+        <div class="diet-toggle">
+            <form method="post">
+                <button type="submit" name="diet_choice" value="Veg" class="<?php echo ($diet_choice == 'Veg') ? 'active' : ''; ?>">Veg Plan</button>
+                <button type="submit" name="diet_choice" value="Non-Veg" class="<?php echo ($diet_choice == 'Non-Veg') ? 'active' : ''; ?>">Non-Veg Plan</button>
+            </form>
+        </div>
+
+        <?php if ($dietPlan) { ?>
+            <h3>Your <?php echo ucfirst($diet_choice); ?> Diet Plan</h3>
+            <p><strong>Goal:</strong> <?php echo $member['Goal_type']; ?></p>
+            <?php if (!empty($dietPlan['BMI_Category']) && !empty($dietPlan['Age_Category'])) { ?>
+                <p><strong>BMI Category:</strong> <?php echo $dietPlan['BMI_Category']; ?></p>
+                <p><strong>Age Category:</strong> <?php echo $dietPlan['Age_Category']; ?></p>
+            <?php } ?>
+            <pre><?php echo htmlspecialchars($dietPlan['Description']); ?></pre>
+        <?php } else { ?>
+            <p>No <?php echo ucfirst($diet_choice); ?> plan available for your profile yet.</p>
+        <?php } ?>
+    </div>
+
+    <!-- Trainer -->
     <div id="trainer" class="content-section" style="display:none;">
         <?php if ($trainer) { ?>
             <h2>Trainer Details</h2>
@@ -269,6 +310,7 @@ while ($row = mysqli_fetch_assoc($schedule_res)) {
         <?php } ?>
     </div>
 
+    <!-- Calendar -->
     <div id="calendar" class="content-section" style="display:none;">
         <h2>My Workout Calendar</h2>
         <div style="text-align:center;">
@@ -279,6 +321,7 @@ while ($row = mysqli_fetch_assoc($schedule_res)) {
         <div id="calendarGrid" class="calendar"></div>
     </div>
 
+    <!-- Feedback -->
     <div id="feedback" class="content-section" style="display:none;">
         <h2>Give Feedback</h2>
         <?php if ($message) echo "<p>$message</p>"; ?>
@@ -295,6 +338,7 @@ while ($row = mysqli_fetch_assoc($schedule_res)) {
                 <option value="Gym">Gym</option>
             </select><br><br>
 
+            <!-- Hidden Target ID (auto-filled) -->
             <input type="hidden" id="target_id" name="target_id" value="">
 
             <label>Rating (1-5):</label>
@@ -320,6 +364,13 @@ while ($row = mysqli_fetch_assoc($schedule_res)) {
                         <th>Comments</th>
                         <th>Date</th>
                       </tr>";
+                    <th>ID</th>
+                    <th>Target Type</th>
+                    <th>Target ID</th>
+                    <th>Rating</th>
+                    <th>Comments</th>
+                    <th>Date</th>
+                  </tr>";
             while ($fb = mysqli_fetch_assoc($feedbackQuery)) {
                 echo "<tr>
                         <td>{$fb['feedback_id']}</td>
@@ -418,6 +469,7 @@ function closeModal() {
 loadCalendar(events);
 </script>
 
+<!-- Popup Modal -->
 <div id="eventModal" class="modal">
   <div class="modal-content">
     <span class="close" onclick="closeModal()">&times;</span>
