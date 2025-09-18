@@ -1,6 +1,12 @@
 <?php
-$conn = mysqli_connect("localhost", "root", "", "gym_db");
+$host = "localhost";
+$user = "root";   // default for XAMPP
+$pass = "";       // default for XAMPP
+$dbname = "gym_db";  // your database name
+
+$conn = mysqli_connect($host, $user, $pass, $dbname);
+
 if (!$conn) {
-    die("Connection failed: " . mysqli_connect_error());
+    die("Database connection failed: " . mysqli_connect_error());
 }
 ?>

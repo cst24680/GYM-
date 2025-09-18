@@ -75,15 +75,13 @@ $result = mysqli_query($conn, "
         padding: 20px;
     }
     .hero h1 {
-        font-family: Arial, Helvetica, sans-serif;
-        font-size: 3em;
-        font-weight: bold;
+        font-size: 2.5rem;
         font-weight: 900;
         margin-bottom: 20px;
-        color: #f78528ff;
+        color: #fff;
     }
     .hero p {
-        font-size: 1.3rem;
+        font-size: 1rem;
         max-width: 600px;
         margin: 0 auto 30px;
         line-height: 1.6;
@@ -112,16 +110,13 @@ $result = mysqli_query($conn, "
 
     /* Features Section */
     .features {
-        background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)),
-                    url("images/gym1-bg.jpg") center/cover no-repeat;
-
+        background: #000000ff;
         padding: 50px 20px;
     }
     .features h2 {
-        font-family: Arial, Helvetica, sans-serif;
         text-align: center;
         margin-bottom: 40px;
-        font-size: 38px;
+        font-size: 28px;
         color: orange;
     }
     .feature-grid {
@@ -132,7 +127,7 @@ $result = mysqli_query($conn, "
         margin: auto;
     }
     .feature-card {
-        background: #ffffffff;
+        background: #f9f9f9;
         border-radius: 8px;
         padding: 20px;
         text-align: center;
@@ -168,187 +163,31 @@ $result = mysqli_query($conn, "
         color: #555;
     }
 
-    /* Why Choose Us */
-    .why-choose {
-         background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)),
-                    url("images/gym1-bg.jpg") center/cover no-repeat;
-
-        padding: 60px 20px;
-        text-align: center;
-    }
-    .why-choose h2 {
-        font-size: 28px;
-        margin-bottom: 10px;
-        color: white;
-    }
-    .why-choose h3 {
-        font-size: 36px;
-        font-weight: bold;
-        margin-bottom: 40px;
-        color: white;
-    }
-    .choose-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 30px;
-        max-width: 1000px;
-        margin: auto;
-    }
-    .choose-card {
-        text-align: center;
+    /* Feedback Section */
+    .feedback-section {
+        margin: 40px auto;
+        max-width: 800px;
+        background: #1a1a1a;
         padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px orange;
     }
-    .choose-card img {
-        height: 50px;
-        margin-bottom: 15px;
-    }
-    .choose-card h4 {
-        font-size: 18px;
-        margin-bottom: 10px;
-        font-weight: bold;
-        color: white;
-    }
-    .choose-card p {
-        font-size: 14px;
-        color: #bbb;
-    }
-
-    /* BMI Section */
-    .bmi-section {
-         background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)),
-                    url("images/gym2-bg.jpg") center/cover no-repeat;
-
-        padding: 50px 20px;
+    .feedback-section h2 {
         text-align: center;
-    }
-    .bmi-section h2 {
-        font-family: Arial, Helvetica, sans-serif;
         color: orange;
-        margin-bottom: 20px;
     }
-    .bmi-form input {
-        margin: 5px;
-        padding: 10px;
-        width: 200px;
+    .feedback-card {
+        background: #222;
+        padding: 15px;
+        margin: 10px 0;
+        border-radius: 6px;
     }
-    .bmi-form button {
-        margin: 5px;
-        padding: 10px 20px;
-        border: none;
-        cursor: pointer;
-        background: orange;
-        color: black;
-        font-weight: bold;
-        border-radius: 5px;
+    .feedback-card strong {
+        color: orange;
     }
-    .bmi-table {
-        margin: 20px auto;
-        border-collapse: collapse;
-        width: 60%;
+    .rating {
+        color: gold;
     }
-    .bmi-table th, .bmi-table td {
-        border: 1px solid #444;
-        padding: 10px;
-        text-align: center;
-    }
-    .highlight {
-        background: orange !important;
-        color: black !important;
-        font-weight: bold;
-    }
-    #suggestion {
-        margin-top: 15px;
-        font-size: 16px;
-        color: #ffcc00;
-        font-weight: bold;
-    }
-
-.feedback-section {
-    width: 100%;
-    background: linear-gradient(rgba(0,0,0,0.9), rgba(0,0,0,0.9)),
-                url("images/gym3-bg.jpg") center/cover no-repeat;
-    padding: 70px 20px;
-    text-align: center;
-}
-
-.feedback-section h2 {
-    color: orange;
-    font-size: 2.5rem;
-    font-weight: bold;
-    margin-bottom: 50px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    text-shadow: 0 0 8px rgba(255, 165, 0, 0.7);
-}
-
-/* Grid for feedback */
-.feedback-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 25px;
-    max-width: 1000px;
-    margin: 0 auto;
-}
-
-/* Card Styling */
-.feedback-card {
-    background: rgba(34, 34, 34, 0.95);
-    padding: 25px 30px;
-    border-radius: 15px;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.6);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    text-align: left;
-    position: relative;
-    overflow: hidden;
-}
-
-.feedback-card:hover {
-    transform: translateY(-6px);
-    box-shadow: 0 8px 25px rgba(255, 165, 0, 0.6);
-}
-
-/* Stars */
-.rating {
-    color: gold;
-    margin-bottom: 12px;
-    font-size: 1.2rem;
-}
-
-/* Feedback text */
-.feedback-card p {
-    margin: 10px 0;
-    line-height: 1.6;
-    color: #ddd;
-    font-size: 1rem;
-}
-
-/* Name */
-.feedback-card strong {
-    display: block;
-    margin-top: 12px;
-    font-size: 1rem;
-    font-weight: 600;
-    color: orange;
-}
-
-/* Date */
-.feedback-card small {
-    display: block;
-    margin-top: 4px;
-    color: #aaa;
-    font-size: 0.85rem;
-}
-
-/* Optional: Add avatar circle */
-.feedback-card::before {
-    content: "👤";
-    position: absolute;
-    top: 15px;
-    right: 20px;
-    font-size: 1.5rem;
-    color: rgba(255,255,255,0.3);
-}
-
 
     /* Footer */
     footer {
@@ -403,7 +242,7 @@ $result = mysqli_query($conn, "
 
 <!-- Features -->
 <div class="features">
-    <h2>Why Choose Us</h2>
+    <h2>Our Features</h2>
     <div class="feature-grid">
         <div class="feature-card">
             <img src="images/calendar1.png" alt="Gym Calendar">
@@ -438,26 +277,6 @@ $result = mysqli_query($conn, "
     </div>
 </div>
 
-<!-- BMI Section -->
-<div class="bmi-section">
-    <h2>BMI CALCULATOR</h2>
-    <form class="bmi-form" onsubmit="return false;">
-        <input type="number" id="weight" placeholder="Your Weight (kg)" required>
-        <input type="number" id="height" placeholder="Your Height (cm)" required>
-        <input type="text" id="result" placeholder="Result here" readonly>
-        <button type="button" onclick="calculateBMI()">CALCULATE IT</button>
-        <button type="reset" onclick="resetBMI()">RESET IT</button>
-    </form>
-    <table class="bmi-table" id="bmiTable">
-        <tr><th>BMI</th><th>CLASSIFICATION</th></tr>
-        <tr><td>&lt; 18.5</td><td>Underweight</td></tr>
-        <tr><td>18.5 - 24.9</td><td>Normal Weight</td></tr>
-        <tr><td>25 - 29.9</td><td>Overweight</td></tr>
-        <tr><td>30+</td><td>Obesity</td></tr>
-    </table>
-    <p id="suggestion"></p>
-</div>
-
 <!-- Feedback Section -->
 <div class="feedback-section">
     <h2>What Our Members Say</h2>
@@ -481,57 +300,6 @@ $result = mysqli_query($conn, "
 <footer>
     &copy; 2025 Gym Management System. All rights reserved.
 </footer>
-
-<script>
-function calculateBMI() {
-    let weight = parseFloat(document.getElementById("weight").value);
-    let height = parseFloat(document.getElementById("height").value);
-
-    if (weight > 0 && height > 0) {
-        let bmi = (weight / ((height / 100) * (height / 100))).toFixed(1);
-        let category = "";
-        let suggestion = "";
-
-        if (bmi < 18.5) category = "Underweight";
-        else if (bmi < 25) category = "Normal Weight";
-        else if (bmi < 30) category = "Overweight";
-        else category = "Obesity";
-
-        document.getElementById("result").value = `BMI: ${bmi} (${category})`;
-
-        let rows = document.querySelectorAll("#bmiTable tr");
-        rows.forEach(row => row.classList.remove("highlight"));
-
-        if (category === "Underweight") rows[1].classList.add("highlight");
-        else if (category === "Normal Weight") rows[2].classList.add("highlight");
-        else if (category === "Overweight") rows[3].classList.add("highlight");
-        else if (category === "Obesity") rows[4].classList.add("highlight");
-
-        let normalWeight = 22 * ((height / 100) * (height / 100));
-        let difference = (normalWeight - weight).toFixed(1);
-
-        if (category === "Normal Weight") {
-            suggestion = "You are at a healthy weight. Keep it up!";
-        } else if (difference > 0) {
-            suggestion = `You may need to gain around ${difference} kg to reach a normal BMI.`;
-        } else {
-            suggestion = `You may need to lose around ${Math.abs(difference)} kg to reach a normal BMI.`;
-        }
-
-        document.getElementById("suggestion").textContent = suggestion;
-
-    } else {
-        alert("Please enter valid height and weight!");
-    }
-}
-
-function resetBMI() {
-    document.getElementById("result").value = "";
-    document.getElementById("suggestion").textContent = "";
-    let rows = document.querySelectorAll("#bmiTable tr");
-    rows.forEach(row => row.classList.remove("highlight"));
-}
-</script>
 
 </body>
 </html>
