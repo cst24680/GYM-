@@ -28,19 +28,19 @@ if (!empty($member['Dietician_id'])) {
     $dietician = mysqli_fetch_assoc($dieticianQuery);
 }
 
-// ✅ Default values
+// Default values
 $diet_choice = "Veg";
 $active_section = "dashboard"; // default section
 $message = "";
 
-// ✅ Handle POST requests
+// Handle POST requests
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['diet_choice'])) {
         $diet_choice = $_POST['diet_choice'];
         $active_section = "dietician";
     }
 
-    // ✅ Handle Feedback Form
+    // Handle Feedback Form
     if (isset($_POST['feedback_submit'])) {
         $target_type = $_POST['target_type'];
         $target_id   = $_POST['target_id'];
@@ -57,28 +57,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $active_section = "feedback";
         }
     }
-}
 
-// ✅ Attendance Check-in Logic
-if (isset($_POST['check_in_action'])) {
-    $check_in_date = date("Y-m-d");
-    $query = "SELECT COUNT(*) as count FROM attendance WHERE Mem_id = $member_id AND DATE(check_in_time) = '$check_in_date'";
-    $result = mysqli_query($conn, $query);
-    $row = mysqli_fetch_assoc($result);
+    // Attendance Check-in Logic
+    if (isset($_POST['check_in_action'])) {
+        $check_in_date = date("Y-m-d");
+        $query = "SELECT COUNT(*) as count FROM attendance WHERE Mem_id = $member_id AND DATE(check_in_time) = '$check_in_date'";
+        $result = mysqli_query($conn, $query);
+        $row = mysqli_fetch_assoc($result);
 
-    if ($row['count'] == 0) {
-        $insertQuery = "INSERT INTO attendance (Mem_id) VALUES ($member_id)";
-        if (mysqli_query($conn, $insertQuery)) {
-            $message = "✅ Check-in successful!";
+        if ($row['count'] == 0) {
+            $insertQuery = "INSERT INTO attendance (Mem_id) VALUES ($member_id)";
+            if (mysqli_query($conn, $insertQuery)) {
+                $message = "✅ Check-in successful!";
+            } else {
+                $message = "❌ Error during check-in: " . mysqli_error($conn);
+            }
         } else {
-            $message = "❌ Error during check-in: " . mysqli_error($conn);
+            $message = "❌ You have already checked in today.";
         }
-    } else {
-        $message = "❌ You have already checked in today.";
     }
 }
 
-// ✅ Fetch attendance data for the member
+
+// Fetch attendance data for the member
 $attendanceQuery = mysqli_query($conn, "SELECT check_in_time FROM attendance WHERE Mem_id = $member_id ORDER BY check_in_time DESC");
 $attendanceRecords = [];
 while ($row = mysqli_fetch_assoc($attendanceQuery)) {
@@ -86,20 +87,20 @@ while ($row = mysqli_fetch_assoc($attendanceQuery)) {
 }
 $attendanceCount = count($attendanceRecords);
 
-// ✅ Determine BMI & Age categories
+// Determine BMI & Age categories
 $bmiCategory = getBMICategory($member['BMI']);
 $ageCategory = getAgeCategory($member['Mem_age']);
 
-// ✅ Normalize diet choice
+// Normalize diet choice
 $diet_choice = strtolower(trim($diet_choice));
 if ($diet_choice === "veg") $diet_choice = "Veg";
 if (in_array($diet_choice, ["non veg", "non-veg", "nonveg"])) $diet_choice = "Non-Veg";
 
-// ✅ Fetch latest assigned diet plan
+// Fetch latest assigned diet plan
 $planQuery = mysqli_query($conn, "
     SELECT Diet_plan_id, Plan_name, Diet_type, Description, BMI_Category, Age_Category, Dietician_id
     FROM diet_plans
-    WHERE Mem_id = {$member['Mem_id']} 
+    WHERE Mem_id = {$member['Mem_id']}
       AND Diet_type = '{$diet_choice}'
     ORDER BY Diet_plan_id DESC
     LIMIT 1
@@ -107,7 +108,7 @@ $planQuery = mysqli_query($conn, "
 $dietPlan = mysqli_fetch_assoc($planQuery);
 
 if (!$dietPlan) {
-    // fallback → use templates
+    // fallback to use templates
     $dietPlan = findTemplate($conn, $member['Goal_type'], $bmiCategory, $ageCategory, $diet_choice);
 }
 
@@ -149,6 +150,17 @@ while ($row = mysqli_fetch_assoc($schedule_res)) {
     <div id="dashboard" class="content-section">
         <h2>Welcome, <?php echo htmlspecialchars($member['Mem_name']); ?>!</h2>
         
+        <div class="content-section card">
+            <h4>Check In Now</h4>
+            <div class="check-in-container">
+                <form method="post">
+                    <button type="submit" name="check_in_action" class="check-in-btn">
+                        <i class="fas fa-sign-in-alt"></i> Check In
+                    </button>
+                </form>
+            </div>
+        </div>
+        
         <?php if (!empty($message)) { ?>
             <div class="message-box">
                 <?php echo $message; ?>
@@ -170,21 +182,10 @@ while ($row = mysqli_fetch_assoc($schedule_res)) {
                 <h4>Attendance Summary</h4>
                 <div class="attendance-summary">
                     <p><strong>Total Check-ins:</strong> <?php echo $attendanceCount; ?></p>
-                    <p><strong>Last Check-in:</strong> 
+                    <p><strong>Last Check-in:</strong>
                         <?php echo $attendanceCount > 0 ? date('Y-m-d H:i:s', strtotime($attendanceRecords[0]['check_in_time'])) : 'N/A'; ?>
                     </p>
                 </div>
-            </div>
-        </div>
-
-        <div class="content-section card">
-            <h4>Check In Now</h4>
-            <div class="check-in-container">
-                <form method="post">
-                    <button type="submit" name="check_in_action" class="check-in-btn">
-                        <i class="fas fa-sign-in-alt"></i> Check In
-                    </button>
-                </form>
             </div>
         </div>
 
@@ -235,47 +236,6 @@ while ($row = mysqli_fetch_assoc($schedule_res)) {
         <?php } ?>
     </div>
 
-    <!-- Dashboard -->
-    <div id="dashboard" class="content-section">
-        <h2>Welcome, <?php echo htmlspecialchars($member['Mem_name']); ?>!</h2>
-        <p><strong>Email:</strong> <?php echo $member['Mem_email']; ?></p>
-        <p><strong>Age:</strong> <?php echo $member['Mem_age']; ?></p>
-        <p><strong>Height:</strong> <?php echo $member['Height']; ?> cm</p>
-        <p><strong>Weight:</strong> <?php echo $member['Weight']; ?> kg</p>
-        <p><strong>BMI:</strong> <?php echo $member['BMI']; ?> (<?php echo $bmiCategory; ?>)</p>
-        <p><strong>Goal:</strong> <?php echo $member['Goal_type']; ?></p>
-    </div>
-
-    <!-- Dietician -->
-    <div id="dietician" class="content-section" style="display:none;">
-        <?php if ($dietician) { ?>
-            <h2>Dietician Details</h2>
-            <p><strong>Name:</strong> <?php echo $dietician['Dietician_name']; ?></p>
-            <p><strong>Email:</strong> <?php echo $dietician['Email']; ?></p>
-            <p><strong>Phone:</strong> <?php echo $dietician['Dietician_phno']; ?></p>
-        <?php } ?>
-
-        <div class="diet-toggle">
-            <form method="post">
-                <button type="submit" name="diet_choice" value="Veg" class="<?php echo ($diet_choice == 'Veg') ? 'active' : ''; ?>">Veg Plan</button>
-                <button type="submit" name="diet_choice" value="Non-Veg" class="<?php echo ($diet_choice == 'Non-Veg') ? 'active' : ''; ?>">Non-Veg Plan</button>
-            </form>
-        </div>
-
-        <?php if ($dietPlan) { ?>
-            <h3>Your <?php echo ucfirst($diet_choice); ?> Diet Plan</h3>
-            <p><strong>Goal:</strong> <?php echo $member['Goal_type']; ?></p>
-            <?php if (!empty($dietPlan['BMI_Category']) && !empty($dietPlan['Age_Category'])) { ?>
-                <p><strong>BMI Category:</strong> <?php echo $dietPlan['BMI_Category']; ?></p>
-                <p><strong>Age Category:</strong> <?php echo $dietPlan['Age_Category']; ?></p>
-            <?php } ?>
-            <pre><?php echo htmlspecialchars($dietPlan['Description']); ?></pre>
-        <?php } else { ?>
-            <p>No <?php echo ucfirst($diet_choice); ?> plan available for your profile yet.</p>
-        <?php } ?>
-    </div>
-
-    <!-- Trainer -->
     <div id="trainer" class="content-section" style="display:none;">
         <?php if ($trainer) { ?>
             <h2>Trainer Details</h2>
@@ -310,7 +270,6 @@ while ($row = mysqli_fetch_assoc($schedule_res)) {
         <?php } ?>
     </div>
 
-    <!-- Calendar -->
     <div id="calendar" class="content-section" style="display:none;">
         <h2>My Workout Calendar</h2>
         <div style="text-align:center;">
@@ -321,7 +280,6 @@ while ($row = mysqli_fetch_assoc($schedule_res)) {
         <div id="calendarGrid" class="calendar"></div>
     </div>
 
-    <!-- Feedback -->
     <div id="feedback" class="content-section" style="display:none;">
         <h2>Give Feedback</h2>
         <?php if ($message) echo "<p>$message</p>"; ?>
@@ -338,7 +296,6 @@ while ($row = mysqli_fetch_assoc($schedule_res)) {
                 <option value="Gym">Gym</option>
             </select><br><br>
 
-            <!-- Hidden Target ID (auto-filled) -->
             <input type="hidden" id="target_id" name="target_id" value="">
 
             <label>Rating (1-5):</label>
@@ -363,14 +320,7 @@ while ($row = mysqli_fetch_assoc($schedule_res)) {
                         <th>Rating</th>
                         <th>Comments</th>
                         <th>Date</th>
-                      </tr>";
-                    <th>ID</th>
-                    <th>Target Type</th>
-                    <th>Target ID</th>
-                    <th>Rating</th>
-                    <th>Comments</th>
-                    <th>Date</th>
-                  </tr>";
+                    </tr>";
             while ($fb = mysqli_fetch_assoc($feedbackQuery)) {
                 echo "<tr>
                         <td>{$fb['feedback_id']}</td>
@@ -417,12 +367,12 @@ const today = new Date();
 let year = today.getFullYear();
 let month = today.getMonth();
 
-const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
 function loadCalendar(events) {
     document.getElementById("monthYear").innerText = `${monthNames[month]} ${year}`;
     const firstDay = new Date(year, month, 1).getDay();
-    const daysInMonth = new Date(year, month+1, 0).getDate();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
     const calendar = document.getElementById("calendarGrid");
     calendar.innerHTML = "";
 
@@ -431,7 +381,7 @@ function loadCalendar(events) {
     }
 
     for (let d = 1; d <= daysInMonth; d++) {
-        const dateStr = `${year}-${String(month+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+        const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
         let dayEvents = events.filter(e => e.Workout_date === dateStr);
         let eventHTML = dayEvents.map(e => `<div class="event">${e.Notes || "No description"}</div>`).join("");
         calendar.innerHTML += `
@@ -444,8 +394,14 @@ function loadCalendar(events) {
 
 function changeMonth(step) {
     month += step;
-    if (month < 0) { month = 11; year--; }
-    if (month > 11) { month = 0; year++; }
+    if (month < 0) {
+        month = 11;
+        year--;
+    }
+    if (month > 11) {
+        month = 0;
+        year++;
+    }
     loadCalendar(events);
 }
 
@@ -469,7 +425,6 @@ function closeModal() {
 loadCalendar(events);
 </script>
 
-<!-- Popup Modal -->
 <div id="eventModal" class="modal">
   <div class="modal-content">
     <span class="close" onclick="closeModal()">&times;</span>
