@@ -7,43 +7,65 @@ body {
 
 /* Sidebar */
 .sidebar {
-    position: fixed;
-    width: 240px;
-    height: 100%;
-    background: rgba(20, 20, 20, 0.95);
-    backdrop-filter: blur(6px);
-    padding: 25px;
-    border-right: 1px solid rgba(255, 165, 0, 0.3);
+     width: 250px;
+    background-color: #161616;
+    padding: 30px 20px;
+    box-shadow: 3px 0 15px rgba(0, 0, 0, 0.6);
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
 }
 
 .sidebar h2 {
-    color: #ff9800;
-    margin-bottom: 25px;
-    font-size: 22px;
+    color: #E63946;
+    text-align: center;
+    margin-bottom: 40px;
+    font-size: 1.9rem;
+    font-weight: 800;
+    letter-spacing: 1.2px;
 }
 
 .sidebar a {
     display: block;
-    padding: 12px 15px;
-    margin: 8px 0;
-    color: #ddd;
+    color: #F5F5F5;
+    padding: 14px 18px;
+    margin: 10px 0;
+    border-radius: 8px;
     text-decoration: none;
-    border-radius: 6px;
-    transition: 0.3s;
+    font-size: 1rem;
     font-weight: 500;
+    transition: background 0.3s, box-shadow 0.3s;
 }
 
 .sidebar a:hover,
 .sidebar a.active {
-    background: #ff9800;
-    color: black;
+    background-color: #E63946;
+    color: #fff;
+    box-shadow: 0 0 8px rgba(230, 57, 70, 0.6);
+}
+
+.sidebar a.active {
+    border-left: 4px solid #FFD166;
+    padding-left: 14px;
 }
 
 /* Logout button */
 .logout {
-    background: #e53935;
+    background-color: #06D6A0;
+    color: #121212;
+    font-weight: bold;
+    padding: 15px;
     text-align: center;
-    margin-top: 20px;
+    border-radius: 8px;
+    margin-top: auto;
+    transition: background 0.3s, box-shadow 0.3s;
+}
+
+.logout:hover{
+      background-color: #05c090;
+    box-shadow: 0 0 10px rgba(6, 214, 160, 0.6);
 }
 
 /* Content */
@@ -93,7 +115,7 @@ table {
 th {
     padding: 12px;
     text-align: left;
-    border-bottom: 2px solid #ff9800;
+    border-bottom:solid#E63946;
     font-weight: bold;
 }
 
