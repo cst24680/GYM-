@@ -15,12 +15,12 @@ body {
     color: #F5F5F5; /* Light text */
     min-height: 100vh;
     display: flex;
-    overflow: hidden; /* FIX: Prevents the main window from scrolling */
+    overflow: hidden; 
     line-height: 1.6;
     font-size: 16px;
 }
 
-/* Scrollbar Utility (matching member.css) */
+/* Scrollbar Utility for main content if needed */
 .main-content::-webkit-scrollbar,
 .content-section::-webkit-scrollbar {
     display: none; 
@@ -31,19 +31,19 @@ body {
 }
 
 /* -------------------------------------- */
-/* --- 2. Sidebar (Matching member.css) --- */
+/* --- 2. Sidebar --- */
 /* -------------------------------------- */
 
 .sidebar {
-    width: 250px; /* Wider to match member.css */
+    width: 250px;
     background-color: #161616;
     padding: 30px 20px;
-    box-shadow: 3px 0 15px rgba(0, 0, 0, 0.8);
+    box-shadow: 3px 0 15px rgba(0, 0, 0, 0.8); /* Stronger shadow */
     display: flex;
     flex-direction: column;
     position: sticky;
     top: 0;
-    height: 100vh; /* FIX: Ensures sidebar takes full viewport height */
+    height: 100vh;
     z-index: 10;
 }
 
@@ -58,17 +58,22 @@ body {
 }
 
 .sidebar a {
-    display: flex; /* Use flex for icon alignment */
+    /* FIX: Set a fixed width to prevent text from causing horizontal shift */
+    width: 100%; 
+    display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 12px; /* Space between icon and text */
     color: #F5F5F5;
-    padding: 14px 18px;
+    /* ADJUSTED: Reduced horizontal padding from 18px to 15px for a buffer */
+    padding: 14px 15px; 
     margin: 8px 0;
     border-radius: 8px;
     text-decoration: none;
     font-size: 1rem;
     font-weight: 500;
     transition: background 0.3s, box-shadow 0.3s, color 0.3s;
+    /* NEW FIX: Prevents text wrapping or measurement issues that cause width shift */
+    white-space: nowrap;
 }
 
 .sidebar a:hover,
@@ -76,10 +81,17 @@ body {
     background-color: #E63946;
     color: #fff;
     box-shadow: 0 0 10px rgba(230, 57, 70, 0.8);
-    transform: translateX(4px);
+    /* Transform removed previously to prevent shift, keeping it removed */
 }
 
-.sidebar .logout {
+.sidebar a.active {
+    background-color: #E63946;
+    border-left: none; /* Removed redundant left border */
+}
+
+/* Updated logout button styling for Trainer dashboard consistency */
+.sidebar .logout,
+.logout-btn {
     background-color: #06D6A0; /* Highlight Green */
     color: #121212;
     font-weight: 700;
@@ -89,40 +101,63 @@ body {
     margin-top: auto;
     margin-bottom: 0;
     transition: background 0.3s, box-shadow 0.3s;
+    /* Ensure flex alignment for consistency with nav links if icons are used */
+    display: flex; 
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
 }
 
-.sidebar .logout:hover {
+.sidebar .logout:hover,
+.logout-btn:hover {
     background-color: #05c090;
     box-shadow: 0 0 12px rgba(6, 214, 160, 0.8);
     transform: none;
 }
 
 /* -------------------------------------- */
-/* --- 3. Main Content & Headings --- */
+/* --- 3. Main Content & Header --- */
 /* -------------------------------------- */
 
 .main-content,
 .content {
-    /* Adjust margin to match the new 250px sidebar width */
-    margin-left: 250px; 
-    flex-grow: 1;
-    padding: 20px 40px 40px 40px; /* FIX: Reduced top padding to 20px */
+      flex-grow: 1;
+    /* WARNING: Do not change padding here if you want to keep it tight on the Trainer Dashboard */
+    padding: 40px; 
     display: flex;
     flex-direction: column;
-    gap: 30px; /* Controls vertical space between sections and header */
-    /* FIX: Ensure the content area scrolls vertically */
+    gap: 30px; 
     overflow-y: auto;
-    height: 100vh; /* FIX: Ensures content area takes full viewport height */
+    max-height: 100vh;
 }
 
-/* Headings (Matching member.css) */
-h1 {
+
+
+/* Header Styles - Match Member Dashboard */
+.header {
+    background-color: #1A1A1A;
+    /* Reduced vertical padding to prevent large gaps */
+    padding: 0 25px 25px 25px; 
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    /* FIX: Ensure no top margin */
+    margin-top: 0; 
+}
+
+.header h1 {
     font-family: 'Montserrat', sans-serif;
     color: #FFD166; /* Gold/Yellow accent */
     font-size: 2rem;
-    margin-bottom: 20px;
+    margin: 0;
+    padding-top: 25px; /* Pushes content down inside the header box */
 }
 
+.header p {
+    color: #999;
+    font-size: 0.9rem;
+}
+
+/* Headings */
 h2 {
     font-family: 'Montserrat', sans-serif;
     color: #FFD166;
@@ -147,13 +182,15 @@ h3 {
 /* --- 4. Content Sections & Boxes --- */
 /* -------------------------------------- */
 
+/* Unifying .content-section and .box display */
 .content-section,
 .box {
-    background-color: #1A1A1A; /* Darker than card background */
+    background-color: #1A1A1A;
     padding: 30px; 
     border-radius: 12px;
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
-    margin-bottom: 0; /* REMOVED: Rely on parent 'gap' for vertical spacing */
+    /* Ensure no residual margin below boxes */
+    margin-bottom: 0; 
     border: 1px solid #333;
     transition: box-shadow 0.3s;
 }
@@ -166,11 +203,50 @@ h3 {
     display: block;
 }
 
-/* New Profile Details List Style (for trainer dashboard profile box) */
+/* Card elements - included for completeness if used in trainer dash */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 30px;
+}
+
+.card {
+    background-color: #222222;
+    padding: 25px; 
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border: 1px solid #333;
+}
+
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.7);
+}
+
+.card h4 {
+    font-family: 'Montserrat', sans-serif;
+    color: #06D6A0;
+    margin-bottom: 20px;
+    font-size: 1.3rem;
+    position: relative;
+}
+
+.card h4::after {
+    content: '';
+    width: 40px;
+    height: 3px;
+    background-color: #E63946;
+    position: absolute;
+    bottom: -8px;
+    left: 0;
+}
+
+/* Profile Details List Style (used in both dashboards) */
 .profile-details-list {
     display: flex;
     flex-direction: column;
-    gap: 12px; /* Spacing between detail lines */
+    gap: 12px;
     padding-top: 5px;
 }
 
@@ -187,10 +263,11 @@ h3 {
     font-weight: 600;
 }
 
+/* Trainer Icons (using member colors for consistency) */
 .profile-details-list i {
     color: #E63946;
     font-size: 1.1rem;
-    width: 20px; /* Fixed width for icon alignment */
+    width: 20px; 
     text-align: center;
 }
 
@@ -247,11 +324,13 @@ form label,
     margin-bottom: 5px;
     font-weight: 600;
     color: #FFD166; /* Gold Accent */
-    text-align: left; /* Aligned left for better readability in full-width forms */
+    text-align: left;
 }
 
-form input,
+form input[type="number"],
+form input[type="text"],
 form select,
+form textarea,
 .assign-form select,
 .assign-form input,
 .assign-form textarea {
@@ -262,7 +341,7 @@ form select,
     border: 1px solid #444;
     background-color: #121212;
     color: #fff;
-    margin-bottom: 15px; /* Consistent spacing */
+    margin-bottom: 15px;
     transition: border 0.3s, box-shadow 0.3s;
     font-size: 1rem;
 }
@@ -298,20 +377,11 @@ form button:hover,
     box-shadow: 0 0 12px rgba(230, 57, 70, 0.5);
 }
 
-/* Delete Button Specific Style */
-.logout-btn {
-    background: #FF595E; /* Brighter red for delete/logout type actions */
-}
-.logout-btn:hover {
-    background: #E63946;
-}
-
-
 /* Assign Workout Form Layout (Flex Column) */
 .assign-form {
-    display: flex; 
+    display: flex;
     flex-direction: column;
-    gap: 10px; /* Reduced gap */
+    gap: 10px;
 }
 
 .assign-form-row {
@@ -321,7 +391,7 @@ form button:hover,
 
 .assign-form textarea {
     resize: vertical;
-    min-height: 100px; /* Slightly taller textarea */
+    min-height: 100px;
     margin-bottom: 15px;
 }
 
