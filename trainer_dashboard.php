@@ -25,7 +25,7 @@ $members_res = mysqli_query($conn, $members_sql);
 
 // Fetch workout plans created by this trainer
 $plans_sql = "SELECT Plan_type_id, Workout_type FROM plan_type WHERE Trainer_id = $trainer_id";
-$plans_res = mysqli_query($conn, $plans_sql); // FIX: Changed 'conn' to '$conn'
+$plans_res = mysqli_query($conn, $plans_sql);
 
 // Fetch feedback given to this trainer
 $feedback_sql = "
@@ -37,8 +37,18 @@ $feedback_sql = "
 ";
 $feedback_res = mysqli_query($conn, $feedback_sql);
 
+// Fetch attendance records of assigned members
+$attendance_sql = "
+    SELECT a.Mem_id, m.Mem_name, a.check_in_time
+    FROM attendance a
+    JOIN member_registration m ON a.Mem_id = m.Mem_id
+    WHERE m.Trainer_id = $trainer_id
+    ORDER BY a.check_in_time DESC
+";
+$attendance_res = mysqli_query($conn, $attendance_sql);
+
 // Set the default active section ID
-$active_section = 'profile'; 
+$active_section = 'profile';
 ?>
 <!DOCTYPE html>
 <html>
@@ -46,32 +56,60 @@ $active_section = 'profile';
     <title>Trainer Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="trainer.css">
-    <!-- CRITICAL FIX: Inline CSS to ensure content sections are hidden by default -->
     <style>
         .box {
-            display: none !important; /* Hide all sections */
-            flex-direction: column; /* Ensure original box flex layout is maintained when visible */
+            display: none !important; /* Hide all sections by default */
+            flex-direction: column;
         }
         .box.active {
-            display: block !important; /* Show only the active section */
+            display: block !important;
         }
-        /* New Header Style for Dashboard (mimicking member dashboard) */
         .header {
             background-color: #1A1A1A;
             padding: 25px;
             border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-            margin-bottom: 30px; /* Space below header */
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            margin-bottom: 30px;
         }
         .header h1 {
             font-family: 'Montserrat', sans-serif;
-            color: #FFD166; /* Gold/Yellow accent */
+            color: #FFD166;
             font-size: 2rem;
             margin: 0;
         }
         .header p {
             color: #999;
             font-size: 0.9rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-top: 20px;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        table th, table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #333;
+        }
+        table th {
+            background: #2A2A2A;
+            color: #06D6A0;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+        }
+        table tr:last-child td {
+            border-bottom: none;
+        }
+        table tr:nth-child(even) {
+            background-color: #1E1E1E;
+        }
+        table tr:hover {
+            background-color: #2A2A2A;
+            transition: background-color 0.2s;
         }
     </style>
 </head>
@@ -80,11 +118,11 @@ $active_section = 'profile';
 <!-- Sidebar -->
 <div class="sidebar">
     <h2>Trainer Panel</h2>
-    <!-- Note: Added class="active" to Dashboard link -->
     <a class="menu-link active" data-target="profile" onclick="showSection(this)">Dashboard</a>
     <a class="menu-link" data-target="members" onclick="showSection(this)">Assigned Members</a>
     <a class="menu-link" data-target="assign" onclick="showSection(this)">Assign Workout</a>
     <a class="menu-link" data-target="manage" onclick="showSection(this)">Manage Workouts</a>
+    <a class="menu-link" data-target="attendance" onclick="showSection(this)">Attendance</a>
     <a class="menu-link" data-target="feedback" onclick="showSection(this)">View Feedback</a>
     <a class="logout-btn" href="logout.php">Logout</a>
 </div>
@@ -92,18 +130,16 @@ $active_section = 'profile';
 <!-- Main content -->
 <div class="content">
     
-    <!-- NEW HEADER SECTION (Matching Member Dashboard Greeting) -->
     <div class="header" id="welcomeHeader">
         <div class="greeting">
             <h1>Welcome, <?php echo htmlspecialchars($trainer['Trainer_name']); ?>!</h1>
             <p><?php echo date("l, M j, Y"); ?></p>
         </div>
     </div>
-    
-    <!-- Profile Card (Now structured with list and icons) -->
+
+    <!-- Profile Section -->
     <div class="box active" id="profile">
         <h2>Your Profile Details</h2>
-        
         <div class="profile-details-list">
             <p><strong><i class="fas fa-envelope"></i> Email:</strong> <?php echo $trainer['Email']; ?></p>
             <p><strong><i class="fas fa-phone"></i> Phone:</strong> <?php echo $trainer['Trainer_phno']; ?></p>
@@ -113,7 +149,7 @@ $active_section = 'profile';
         </div>
     </div>
 
-    <!-- Members -->
+    <!-- Members Section -->
     <div class="box" id="members">
         <h2>Members Assigned to You</h2>
         <?php if (mysqli_num_rows($members_res) > 0): ?>
@@ -125,9 +161,7 @@ $active_section = 'profile';
                     <th>BMI</th>
                     <th>Plan Name</th>
                 </tr>
-                <?php 
-                mysqli_data_seek($members_res, 0);
-                while ($row = mysqli_fetch_assoc($members_res)): ?>
+                <?php mysqli_data_seek($members_res,0); while($row = mysqli_fetch_assoc($members_res)): ?>
                     <tr>
                         <td><?php echo $row['Mem_name']; ?></td>
                         <td><?php echo $row['Mem_email']; ?></td>
@@ -142,30 +176,26 @@ $active_section = 'profile';
         <?php endif; ?>
     </div>
 
-    <!-- Assign Workout -->
+    <!-- Assign Workout Section -->
     <div class="box" id="assign">
         <h2>Assign Workout</h2>
         <form action="assign_workout.php" method="POST" class="assign-form">
             <label>Member:</label>
             <select name="Mem_id" required>
                 <option value="">-- Select Member --</option>
-                <?php
-                mysqli_data_seek($members_res, 0);
-                while ($m = mysqli_fetch_assoc($members_res)) {
+                <?php mysqli_data_seek($members_res,0); while($m = mysqli_fetch_assoc($members_res)) {
                     echo "<option value='{$m['Mem_id']}'>{$m['Mem_name']}</option>";
-                }
-                ?>
+                } ?>
             </select>
 
             <label>Workout Plan:</label>
             <select name="Plan_type_id" required>
                 <option value="">-- Select Workout Plan --</option>
                 <?php 
-                $plans_sql = "SELECT Plan_type_id, Workout_type FROM plan_type";
+                $plans_sql = "SELECT Plan_type_id, Workout_type FROM plan_type WHERE Trainer_id = $trainer_id";
                 $plans_res = mysqli_query($conn, $plans_sql);
-
-                if ($plans_res && mysqli_num_rows($plans_res) > 0) {
-                    while ($p = mysqli_fetch_assoc($plans_res)) {
+                if($plans_res && mysqli_num_rows($plans_res) > 0) {
+                    while($p = mysqli_fetch_assoc($plans_res)) {
                         echo "<option value='{$p['Plan_type_id']}'>{$p['Workout_type']}</option>";
                     }
                 } else {
@@ -184,13 +214,40 @@ $active_section = 'profile';
         </form>
     </div>
 
-    <!-- Manage Workouts -->
+    <!-- Manage Workouts Section -->
     <div class="box" id="manage">
         <h2>Manage Workouts</h2>
         <a class="link" href="view_assigned_workouts.php">View / Edit / Delete Workouts</a>
     </div>
 
-    <!-- View Feedback -->
+    <!-- Attendance Section -->
+    <div class="box" id="attendance">
+        <h2>Attendance Records</h2>
+        <?php if(mysqli_num_rows($attendance_res) > 0): ?>
+            <table>
+                <tr>
+                    <th>Member Name</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                </tr>
+                <?php while($att = mysqli_fetch_assoc($attendance_res)): 
+                    $dt = strtotime($att['check_in_time']);
+                    $date = date("Y-m-d", $dt);
+                    $time = date("h:i A", $dt);
+                ?>
+                    <tr>
+                        <td><?php echo $att['Mem_name']; ?></td>
+                        <td><?php echo $date; ?></td>
+                        <td><?php echo $time; ?></td>
+                    </tr>
+                <?php endwhile; ?>
+            </table>
+        <?php else: ?>
+            <p>No attendance records yet.</p>
+        <?php endif; ?>
+    </div>
+
+    <!-- Feedback Section -->
     <div class="box" id="feedback">
         <h2>Feedback from Members</h2>
         <?php if (mysqli_num_rows($feedback_res) > 0): ?>
@@ -218,70 +275,29 @@ $active_section = 'profile';
 </div>
 
 <script>
-    // JavaScript function to switch sections
-    function showSection(clickedLink) {
-        const targetId = clickedLink.dataset.target;
-        
-        // Remove 'active' class from all links and sections
-        document.querySelectorAll(".menu-link").forEach(link => link.classList.remove("active"));
-        document.querySelectorAll(".box").forEach(section => section.classList.remove("active"));
+function showSection(clickedLink) {
+    const targetId = clickedLink.dataset.target;
+    document.querySelectorAll(".menu-link").forEach(link => link.classList.remove("active"));
+    document.querySelectorAll(".box").forEach(section => section.classList.remove("active"));
+    clickedLink.classList.add("active");
+    const targetSection = document.getElementById(targetId);
+    if(targetSection) targetSection.classList.add("active");
+    const contentArea = document.querySelector('.content');
+    if(contentArea) contentArea.scrollTop = 0;
+    const header = document.getElementById('welcomeHeader');
+    header.style.display = (targetId === 'profile') ? 'block' : 'none';
+}
 
-        // Add 'active' class to the clicked link
-        clickedLink.classList.add("active");
-        
-        // Add 'active' class to the corresponding section
-        const targetSection = document.getElementById(targetId);
-        if (targetSection) {
-            targetSection.classList.add("active");
-            
-            // Scroll to the top of the content area if necessary (optional improvement)
-            const contentArea = document.querySelector('.content');
-            if (contentArea) contentArea.scrollTop = 0;
-        }
-        
-        // Ensure the header is only shown on the dashboard (profile)
-        const header = document.getElementById('welcomeHeader');
-        if (targetId === 'profile') {
-            header.style.display = 'block';
-        } else {
-            header.style.display = 'none';
-        }
-    }
-
-    // Function to set the active section on page load
-    function setActiveSection(defaultId) {
-        // Use the initial state set in PHP (default is 'profile')
-        const initialSection = document.getElementById(defaultId);
-        const initialLink = document.querySelector(`.menu-link[data-target="${defaultId}"]`);
-
-        if (initialSection) {
-            // Ensure only the initial section and link are active on load
-            document.querySelectorAll(".box").forEach(section => section.classList.remove("active"));
-            document.querySelectorAll(".menu-link").forEach(link => link.classList.remove("active"));
-
-            initialSection.classList.add("active");
-        }
-        if (initialLink) {
-            initialLink.classList.add("active");
-        }
-        
-        // Ensure the header is visible on load if we start at 'profile'
-        const header = document.getElementById('welcomeHeader');
-        if (defaultId === 'profile') {
-            header.style.display = 'block';
-        } else {
-            header.style.display = 'none';
-        }
-    }
-
-    // Attach click listeners after the DOM is fully loaded (alternative to onload attribute)
-    document.addEventListener('DOMContentLoaded', () => {
-        // The setActiveSection is called via the <body> onload attribute for early visibility
-        // but this ensures the click listeners are attached reliably.
-        
-        // Note: The click listeners are already set via inline 'onclick' attributes in the HTML.
-        // We ensure that the initial state is correctly set on the body element.
-    });
+function setActiveSection(defaultId) {
+    const initialSection = document.getElementById(defaultId);
+    const initialLink = document.querySelector(`.menu-link[data-target="${defaultId}"]`);
+    document.querySelectorAll(".box").forEach(section => section.classList.remove("active"));
+    document.querySelectorAll(".menu-link").forEach(link => link.classList.remove("active"));
+    if(initialSection) initialSection.classList.add("active");
+    if(initialLink) initialLink.classList.add("active");
+    const header = document.getElementById('welcomeHeader');
+    header.style.display = (defaultId === 'profile') ? 'block' : 'none';
+}
 </script>
 
 </body>

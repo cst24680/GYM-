@@ -84,11 +84,8 @@ VALUES ($member_id, $target_id, '$target_type', $rating, '$comments', NOW())";
                 $message = "❌ Error during check-in: " . mysqli_error($conn);
             }
         } else {
-            // This is the message for double check-in
             $message = "❌ You have already checked in today.";
         }
-        // Ensure the dashboard remains the active section to show the message
-        $active_section = "dashboard";
     }
 }
 
@@ -207,17 +204,6 @@ while ($row = mysqli_fetch_assoc($schedule_res)) {
                             <i class="fas fa-sign-in-alt"></i> CHECK IN NOW
                         </button>
                     </form>
-                    <!-- FIX: Display the message with clear color/border for visibility -->
-                    <?php 
-                        if ($message) {
-                            // Determine style based on success (green) or error/warning (red)
-                            $style = strpos($message, '✅') !== false 
-                                ? 'color: #06D6A0; border: 1px solid #06D6A0;' // Success (Green)
-                                : 'color: #E63946; border: 1px solid #E63946;'; // Error (Red)
-
-                            echo "<div class='status-message' style='{$style} background: rgba(0,0,0,0.2); padding: 10px; border-radius: 5px; margin-top: 15px; font-weight: bold;'>$message</div>";
-                        }
-                    ?>
                 </div>
                 
                 <div class="attendance-status-display">
@@ -330,35 +316,26 @@ while ($row = mysqli_fetch_assoc($schedule_res)) {
     <div id="feedback" class="content-section" style="display:none;">
         <h2>Give Feedback</h2>
         <?php if ($message) echo "<p>$message</p>"; ?>
-        <form method="post" id="feedback-form">
-            <!-- Target Type -->
-            <div class="form-group">
-                <label for="target_type">Target Type:</label>
-                <select name="target_type" id="target_type" required onchange="setTargetId()">
-                    <option value="">-- Select --</option>
-                    <?php if ($trainer) { ?>
-                        <option value="Trainer">Trainer (<?php echo $trainer['Trainer_name']; ?>)</option>
-                    <?php } ?>
-                    <?php if ($dietician) { ?>
-                        <option value="Dietician">Dietician (<?php echo $dietician['Dietician_name']; ?>)</option>
-                    <?php } ?>
-                    <option value="Gym">Gym</option>
-                </select>
-            </div>
+        <form method="post">
+            <label>Target Type:</label>
+            <select name="target_type" id="target_type" required onchange="setTargetId()">
+                <option value="">-- Select --</option>
+                <?php if ($trainer) { ?>
+                    <option value="Trainer">Trainer (<?php echo $trainer['Trainer_name']; ?>)</option>
+                <?php } ?>
+                <?php if ($dietician) { ?>
+                    <option value="Dietician">Dietician (<?php echo $dietician['Dietician_name']; ?>)</option>
+                <?php } ?>
+                <option value="Gym">Gym</option>
+            </select><br><br>
 
             <input type="hidden" id="target_id" name="target_id" value="">
 
-            <!-- Rating -->
-            <div class="form-group">
-                <label for="rating">Rating (1-5):</label>
-                <input type="number" name="rating" id="rating" min="1" max="5" required>
-            </div>
+            <label>Rating (1-5):</label>
+            <input type="number" name="rating" min="1" max="5" required><br><br>
 
-            <!-- Comments -->
-            <div class="form-group">
-                <label for="comments">Comments:</label>
-                <textarea name="comments" id="comments" rows="4" cols="50" placeholder="Write your feedback..."></textarea>
-            </div>
+            <label>Comments:</label><br>
+            <textarea name="comments" rows="4" cols="50" placeholder="Write your feedback..."></textarea><br><br>
 
             <button type="submit" name="feedback_submit">Submit Feedback</button>
         </form>
@@ -480,23 +457,14 @@ function loadCalendar(events, gridId = 'calendarGrid') {
         if (isToday) classes += ' current ';
         if (dayEvents.length > 0) classes += ' planned ';
         
-        // --- UPDATED FIX: Display the workout NOTES instead of the TYPE ---
-        let workoutContent = '';
-        if (dayEvents.length > 0) {
-            // Display the Notes/Description of the first event found
-            const firstWorkoutNotes = dayEvents[0].Notes || dayEvents[0].Workout_type; // Fallback to type if notes are missing
-            // Trim to fit the small box
-            const displayNotes = firstWorkoutNotes.length > 15 ? firstWorkoutNotes.substring(0, 12) + '...' : firstWorkoutNotes; 
-            workoutContent = `<div class="workout-label" title="${firstWorkoutNotes}">${displayNotes}</div>`;
-        }
-        // --- END UPDATED FIX ---
+        const eventIcon = dayEvents.length > 0 ? '<i class="fas fa-dumbbell small-icon"></i>' : '';
 
         calendar.innerHTML += `
             <div class="day ${classes.trim()}" 
                  data-date="${dateStr}" 
                  onclick="showModal('${dateStr}')">
                 <div class="date">${d}</div>
-                ${workoutContent}
+                ${eventIcon}
             </div>`;
     }
 }

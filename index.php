@@ -379,7 +379,7 @@ $result = mysqli_query($conn, "
 
 <!-- Navbar -->
 <div class="navbar">
-    <div class="logo">FitGym</div>
+    <div class="logo">FitX</div>
     <ul>
         <li><a href="index.php">Home</a></li>
         <li><a href="login.php">Login</a></li>
@@ -413,7 +413,7 @@ $result = mysqli_query($conn, "
         <div class="feature-card">
             <img src="images/bmi.png" alt="BMI Analyzer">
             <h3>BMI Analyzer</h3>
-            <p>Track your Body Mass Index </p>
+            <p>Quickly calculate your BMI and understand what it means for your health </p>
         </div>
         <div class="feature-card">
             <img src="images/nutrition.png" alt="Personalized Nutritionist">
@@ -431,7 +431,7 @@ $result = mysqli_query($conn, "
             <p>Receive personalized workout plans from your assigned trainer.</p>
         </div>
         <div class="feature-card">
-            <img src="images/feedback.png" alt="Feedback">
+            <img src="images/feedback1.png" alt="Feedback">
             <h3>Feedback System</h3>
             <p>Share your thoughts and track your improvement with our feedback feature.</p>
         </div>

@@ -1,112 +1,180 @@
 <?php
 session_start();
+// IMPORTANT: Enable error reporting for debugging database connection issues
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1); 
+error_reporting(E_ALL);
+
 include "db.php";
+
+// Check for successful database connection
+if (!isset($conn) || !$conn) {
+    die("<h1>Database Connection Error!</h1><p>Please check your db.php file.</p>");
+}
 
 if (!isset($_SESSION['User_type']) || $_SESSION['User_type'] !== 'admin') {
     header("Location: login.php");
     exit();
 }
 
-// Handle ADD / EDIT / DELETE actions
+// --- CORE CRUD OPERATIONS (DIRECT SQL - INSECURE) ---
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Helper function to safely escape strings for direct SQL
+    function clean_input($conn, $data) {
+        return mysqli_real_escape_string($conn, $data);
+    }
+
     // Add / Edit Member
     if (isset($_POST['save_member'])) {
         $id = $_POST['id'] ?? '';
-        $name = $_POST['name'];
-        $email = $_POST['email'];
-        $age = $_POST['age'];
-        $height = $_POST['height'];
-        $weight = $_POST['weight'];
-        $goal = $_POST['goal'];
+        $name = clean_input($conn, $_POST['name']);
+        $email = clean_input($conn, $_POST['email']);
+        $age = clean_input($conn, $_POST['age']);
+        $height = clean_input($conn, $_POST['height']);
+        $weight = clean_input($conn, $_POST['weight']);
+        $goal = clean_input($conn, $_POST['goal']);
 
         if ($id) {
-            mysqli_query($conn, "UPDATE member_registration SET 
+            $sql = "UPDATE member_registration SET 
                 Mem_name='$name', Mem_email='$email', Mem_age='$age', Height='$height', 
-                Weight='$weight', Goal_type='$goal' WHERE Mem_id='$id'");
+                Weight='$weight', Goal_type='$goal' WHERE Mem_id='$id'";
         } else {
-            mysqli_query($conn, "INSERT INTO member_registration 
+            $sql = "INSERT INTO member_registration 
                 (Mem_name, Mem_email, Mem_age, Height, Weight, Goal_type)
-                VALUES ('$name','$email','$age','$height','$weight','$goal')");
+                VALUES ('$name','$email','$age','$height','$weight','$goal')";
         }
+        mysqli_query($conn, $sql);
     }
 
     // Add / Edit Trainer
     if (isset($_POST['save_trainer'])) {
         $id = $_POST['id'] ?? '';
-        $name = $_POST['name'];
-        $phone = $_POST['phone'];
-        $gender = $_POST['gender'];
-        $speciality = $_POST['speciality'];
-        $status = $_POST['status'];
+        $name = clean_input($conn, $_POST['name']);
+        $phone = clean_input($conn, $_POST['phone']);
+        $gender = clean_input($conn, $_POST['gender']);
+        $speciality = clean_input($conn, $_POST['speciality']);
+        $status = clean_input($conn, $_POST['status']);
 
         if ($id) {
-            mysqli_query($conn, "UPDATE trainer SET 
+            $sql = "UPDATE trainer SET 
                 Trainer_name='$name', Trainer_phno='$phone', Trainer_gender='$gender', 
-                Speciality='$speciality', Trainer_status='$status' WHERE Trainer_id='$id'");
+                Speciality='$speciality', Trainer_status='$status' WHERE Trainer_id='$id'";
         } else {
-            mysqli_query($conn, "INSERT INTO trainer 
+            $sql = "INSERT INTO trainer 
                 (Trainer_name, Trainer_phno, Trainer_gender, Speciality, Trainer_status)
-                VALUES ('$name','$phone','$gender','$speciality','$status')");
+                VALUES ('$name','$phone','$gender','$speciality','$status')";
         }
+        mysqli_query($conn, $sql);
     }
 
     // Add / Edit Dietician
     if (isset($_POST['save_dietician'])) {
         $id = $_POST['id'] ?? '';
-        $name = $_POST['name'];
-        $phone = $_POST['phone'];
-        $status = $_POST['status'];
+        $name = clean_input($conn, $_POST['name']);
+        $phone = clean_input($conn, $_POST['phone']);
+        $status = clean_input($conn, $_POST['status']);
 
         if ($id) {
-            mysqli_query($conn, "UPDATE dietician SET 
+            $sql = "UPDATE dietician SET 
                 Dietician_name='$name', Dietician_phno='$phone', Dietician_status='$status' 
-                WHERE Dietician_id='$id'");
+                WHERE Dietician_id='$id'";
         } else {
-            mysqli_query($conn, "INSERT INTO dietician 
+            $sql = "INSERT INTO dietician 
                 (Dietician_name, Dietician_phno, Dietician_status)
-                VALUES ('$name','$phone','$status')");
+                VALUES ('$name','$phone','$status')";
         }
+        mysqli_query($conn, $sql);
     }
 
+    // After POST, redirect to prevent form resubmission
     header("Location: admin_dashboard.php");
     exit();
 }
 
-// Delete actions
-if (isset($_GET['delete']) && isset($_GET['type'])) {
-    $id = intval($_GET['delete']);
+// Delete actions (Direct SQL - INSECURE)
+if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id']) && isset($_GET['type'])) {
+    $id = (int)$_GET['id']; // Cast to int for slight protection
     $type = $_GET['type'];
+    $table = "";
+    $id_col = "";
 
     if ($type === 'member') {
-        mysqli_query($conn, "DELETE FROM member_registration WHERE Mem_id='$id'");
+        $table = "member_registration";
+        $id_col = "Mem_id";
     } elseif ($type === 'trainer') {
-        mysqli_query($conn, "DELETE FROM trainer WHERE Trainer_id='$id'");
+        $table = "trainer";
+        $id_col = "Trainer_id";
     } elseif ($type === 'dietician') {
-        mysqli_query($conn, "DELETE FROM dietician WHERE Dietician_id='$id'");
+        $table = "dietician";
+        $id_col = "Dietician_id";
     }
 
+    if ($table) {
+        $sql = "DELETE FROM $table WHERE $id_col = $id";
+        mysqli_query($conn, $sql);
+    }
     header("Location: admin_dashboard.php");
     exit();
 }
 
-// Fetch data
+// --- FETCH DATA ---
+
 $members_res = mysqli_query($conn, "SELECT * FROM member_registration");
 $trainers_res = mysqli_query($conn, "SELECT * FROM trainer");
 $dieticians_res = mysqli_query($conn, "SELECT * FROM dietician");
+
+// Function to fetch and organize staff names for feedback lookup
+function fetch_target_names($conn) {
+    $names = ['Trainer' => [], 'Dietician' => []];
+
+    // Fetch Trainers
+    $res = mysqli_query($conn, "SELECT Trainer_id, Trainer_name FROM trainer");
+    while ($row = mysqli_fetch_assoc($res)) {
+        $names['Trainer'][$row['Trainer_id']] = $row['Trainer_name'];
+    }
+
+    // Fetch Dieticians
+    $res = mysqli_query($conn, "SELECT Dietician_id, Dietician_name FROM dietician");
+    while ($row = mysqli_fetch_assoc($res)) {
+        $names['Dietician'][$row['Dietician_id']] = $row['Dietician_name'];
+    }
+    return $names;
+}
+
+$target_names = fetch_target_names($conn);
+
+// Fetch ALL Feedback (Joined with Member name for context)
+$feedback_sql = "
+    SELECT f.*, m.Mem_name
+    FROM feedback f
+    LEFT JOIN member_registration m ON f.Mem_id = m.Mem_id
+    ORDER BY f.created_at DESC
+";
+$feedback_res = mysqli_query($conn, $feedback_sql);
+
+// NEW: Fetch Contact Messages
+$contact_sql = "SELECT * FROM contact ORDER BY sent_at DESC";
+$contact_res = mysqli_query($conn, $contact_sql);
+
 ?>
 <!DOCTYPE html>
 <html>
 <head>
     <title>Admin Dashboard</title>
     <link rel="stylesheet" href="admin.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
-<body>
+<body onload="showSection('members')">
 
 <div class="sidebar">
     <h2>Admin Panel</h2>
     <a href="#" onclick="showSection('members')">Members</a>
     <a href="#" onclick="showSection('trainers')">Trainers</a>
     <a href="#" onclick="showSection('dieticians')">Dieticians</a>
+    <a href="#" onclick="showSection('feedback')">Feedback</a>
+    <!-- NEW: Contact Messages Link -->
+    <a href="#" onclick="showSection('contact')">Contact Messages</a>
     <a href="logout.php" class="logout">Logout</a>
 </div>
 
@@ -123,15 +191,16 @@ $dieticians_res = mysqli_query($conn, "SELECT * FROM dietician");
             </tr>
             <?php while ($row = mysqli_fetch_assoc($members_res)): ?>
             <tr>
-                <td><?= $row['Mem_name'] ?></td>
-                <td><?= $row['Mem_email'] ?></td>
-                <td><?= $row['Mem_age'] ?></td>
-                <td><?= $row['Height'] ?></td>
-                <td><?= $row['Weight'] ?></td>
-                <td><?= $row['Goal_type'] ?></td>
+                <td><?= htmlspecialchars($row['Mem_name']) ?></td>
+                <td><?= htmlspecialchars($row['Mem_email']) ?></td>
+                <td><?= htmlspecialchars($row['Mem_age']) ?></td>
+                <td><?= htmlspecialchars($row['Height']) ?></td>
+                <td><?= htmlspecialchars($row['Weight']) ?></td>
+                <td><?= htmlspecialchars($row['Goal_type']) ?></td>
                 <td>
                     <button onclick='editMember(<?= json_encode($row) ?>)'>Edit</button>
-                    <a href="?delete=<?= $row['Mem_id'] ?>&type=member" onclick="return confirm('Delete this member?')">Delete</a>
+                    <!-- Updated Delete Call to use Custom Confirm -->
+                    <button class="delete-btn" onclick="showCustomConfirm(<?= $row['Mem_id'] ?>, 'member')">Delete</button>
                 </td>
             </tr>
             <?php endwhile; ?>
@@ -148,14 +217,15 @@ $dieticians_res = mysqli_query($conn, "SELECT * FROM dietician");
             </tr>
             <?php while ($row = mysqli_fetch_assoc($trainers_res)): ?>
             <tr>
-                <td><?= $row['Trainer_name'] ?></td>
-                <td><?= $row['Trainer_phno'] ?></td>
-                <td><?= $row['Trainer_gender'] ?></td>
-                <td><?= $row['Speciality'] ?></td>
-                <td><?= $row['Trainer_status'] ?></td>
+                <td><?= htmlspecialchars($row['Trainer_name']) ?></td>
+                <td><?= htmlspecialchars($row['Trainer_phno']) ?></td>
+                <td><?= htmlspecialchars($row['Trainer_gender']) ?></td>
+                <td><?= htmlspecialchars($row['Speciality']) ?></td>
+                <td><?= htmlspecialchars($row['Trainer_status']) ?></td>
                 <td>
                     <button onclick='editTrainer(<?= json_encode($row) ?>)'>Edit</button>
-                    <a href="?delete=<?= $row['Trainer_id'] ?>&type=trainer" onclick="return confirm('Delete this trainer?')">Delete</a>
+                    <!-- Updated Delete Call to use Custom Confirm -->
+                    <button class="delete-btn" onclick="showCustomConfirm(<?= $row['Trainer_id'] ?>, 'trainer')">Delete</button>
                 </td>
             </tr>
             <?php endwhile; ?>
@@ -172,16 +242,80 @@ $dieticians_res = mysqli_query($conn, "SELECT * FROM dietician");
             </tr>
             <?php while ($row = mysqli_fetch_assoc($dieticians_res)): ?>
             <tr>
-                <td><?= $row['Dietician_name'] ?></td>
-                <td><?= $row['Dietician_phno'] ?></td>
-                <td><?= $row['Dietician_status'] ?></td>
+                <td><?= htmlspecialchars($row['Dietician_name']) ?></td>
+                <td><?= htmlspecialchars($row['Dietician_phno']) ?></td>
+                <td><?= htmlspecialchars($row['Dietician_status']) ?></td>
                 <td>
                     <button onclick='editDietician(<?= json_encode($row) ?>)'>Edit</button>
-                    <a href="?delete=<?= $row['Dietician_id'] ?>&type=dietician" onclick="return confirm('Delete this dietician?')">Delete</a>
+                    <!-- Updated Delete Call to use Custom Confirm -->
+                    <button class="delete-btn" onclick="showCustomConfirm(<?= $row['Dietician_id'] ?>, 'dietician')">Delete</button>
                 </td>
             </tr>
             <?php endwhile; ?>
         </table>
+    </div>
+    
+    <!-- Feedback Section -->
+    <div id="feedback" class="section" style="display:none;">
+        <h2>All Member Feedback</h2>
+        <?php if ($feedback_res && mysqli_num_rows($feedback_res) > 0): ?>
+            <table>
+                <tr>
+                    <th>Target Type</th>
+                    <th>Target Name</th>
+                    <th>Rating</th>
+                    <th>Comments</th>
+                    <th>Member Name</th>
+                    <th>Date</th>
+                </tr>
+                <?php while ($fb = mysqli_fetch_assoc($feedback_res)): 
+                    $target_name = 'Gym'; // Default for Gym
+                    $target_id = $fb['target_id'];
+
+                    if ($fb['target_type'] === 'Trainer' && isset($target_names['Trainer'][$target_id])) {
+                        $target_name = $target_names['Trainer'][$target_id];
+                    } elseif ($fb['target_type'] === 'Dietician' && isset($target_names['Dietician'][$target_id])) {
+                        $target_name = $target_names['Dietician'][$target_id];
+                    }
+                ?>
+                    <tr>
+                        <td><?= htmlspecialchars($fb['target_type']) ?></td>
+                        <td><?= htmlspecialchars($target_name) ?></td>
+                        <td><?= htmlspecialchars($fb['rating']) ?>/5</td>
+                        <td style="max-width: 300px;"><?= htmlspecialchars($fb['comments']) ?></td>
+                        <td><?= htmlspecialchars($fb['Mem_name'] ?? 'N/A') ?></td>
+                        <td><?= htmlspecialchars($fb['created_at']) ?></td>
+                    </tr>
+                <?php endwhile; ?>
+            </table>
+        <?php else: ?>
+            <p>No feedback records found yet.</p>
+        <?php endif; ?>
+    </div>
+    
+    <!-- Contact Messages Section (NEW) -->
+    <div id="contact" class="section" style="display:none;">
+        <h2>Contact Messages</h2>
+        <?php if ($contact_res && mysqli_num_rows($contact_res) > 0): ?>
+            <table>
+                <tr>
+                    <th>Date</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Message</th>
+                </tr>
+                <?php while ($msg = mysqli_fetch_assoc($contact_res)): ?>
+                    <tr>
+                        <td><?= htmlspecialchars($msg['sent_at']) ?></td>
+                        <td><?= htmlspecialchars($msg['sender_name']) ?></td>
+                        <td><?= htmlspecialchars($msg['sender_email']) ?></td>
+                        <td style="max-width: 400px;"><?= htmlspecialchars($msg['message']) ?></td>
+                    </tr>
+                <?php endwhile; ?>
+            </table>
+        <?php else: ?>
+            <p>No contact messages found.</p>
+        <?php endif; ?>
     </div>
 </div>
 
@@ -233,10 +367,27 @@ $dieticians_res = mysqli_query($conn, "SELECT * FROM dietician");
     </div>
 </div>
 
+<!-- Custom Confirmation Modal (Replaces unsafe browser confirm()) -->
+<div id="confirmModal" class="modal">
+    <div class="modal-content">
+        <h3 class="text-red">Confirm Deletion</h3>
+        <p class="message" id="confirmMessage">Are you sure you want to delete this record?</p>
+        <div class="button-group">
+            <button onclick="closeModal('confirmModal')">Cancel</button>
+            <button class="delete" id="confirmDeleteButton">Delete</button>
+        </div>
+    </div>
+</div>
+
 <script>
+// Function to show only the selected section
 function showSection(sectionId) {
     document.querySelectorAll('.section').forEach(s => s.style.display = 'none');
     document.getElementById(sectionId).style.display = 'block';
+    
+    // Set active class on sidebar links
+    document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));
+    document.querySelector('.sidebar a[onclick*="' + sectionId + '"]').classList.add('active');
 }
 
 function openModal(id) {
@@ -247,7 +398,22 @@ function closeModal(id) {
     document.getElementById(id).style.display = 'none';
 }
 
+// Custom Confirmation Logic
+function showCustomConfirm(id, type) {
+    const message = `Are you sure you want to permanently delete this ${type} (ID: ${id})?`;
+    document.getElementById('confirmMessage').innerText = message;
+    
+    const deleteBtn = document.getElementById('confirmDeleteButton');
+    // Set the action URL using GET parameters for the server-side delete logic
+    deleteBtn.onclick = () => {
+        window.location.href = `?action=delete&id=${id}&type=${type}`;
+    };
+    
+    openModal('confirmModal');
+}
+
 function editMember(data) {
+    // Note: data values are already JSON-encoded/decoded safely
     document.getElementById('member_id').value = data.Mem_id;
     document.getElementById('member_name').value = data.Mem_name;
     document.getElementById('member_email').value = data.Mem_email;
@@ -275,6 +441,18 @@ function editDietician(data) {
     document.getElementById('dietician_status').value = data.Dietician_status;
     openModal('dieticianModal');
 }
+
+// Set initial active link and section on load
+document.addEventListener('DOMContentLoaded', () => {
+    // Check if a section hash is present in the URL (e.g., #feedback)
+    const hash = window.location.hash.substring(1);
+    if (hash) {
+        showSection(hash);
+    } else {
+        // Default to 'members' if no hash is present
+        showSection('members');
+    }
+});
 </script>
 
 </body>

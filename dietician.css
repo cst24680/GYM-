@@ -1,100 +1,241 @@
-body {
+/* -------------------------------------- */
+/* --- 1. Global Styles & Layout --- */
+/* -------------------------------------- */
+
+* {
+    box-sizing: border-box;
     margin: 0;
-    font-family: Arial, sans-serif;
-    background: #000;
-    color: #fff;
+    padding: 0;
 }
 
-/* Sidebar */
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: #0E0E0E; /* Deep Black background */
+    color: #F5F5F5; /* Light text */
+    min-height: 100vh;
+    display: flex;
+    overflow-x: hidden; /* Prevent horizontal scroll */
+    line-height: 1.6;
+    font-size: 16px;
+}
+
+/* Scrollbar Utility */
+.main-content::-webkit-scrollbar,
+.content-section::-webkit-scrollbar {
+    display: none; 
+}
+.main-content, .content-section {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+
+/* -------------------------------------- */
+/* --- 2. Sidebar (Matching Trainer.css) --- */
+/* -------------------------------------- */
+
 .sidebar {
-    width: 220px;
-    background: #111;
-    color: orange;
-    height: 100vh;
-    position: fixed;
+     width: 250px;
+    background-color: #161616;
+    padding: 30px 20px;
+    box-shadow: 3px 0 15px rgba(0, 0, 0, 0.8); /* Stronger shadow */
+    display: flex;
+    flex-direction: column;
+    position: sticky;
     top: 0;
-    left: 0;
-    padding: 20px;
+    height: 100vh;
+    z-index: 10;
 }
 
 .sidebar h2 {
-    color: orange;
-    margin-bottom: 20px;
-}
-.sidebar a {
-    display: block;
-    color: #fff;
-    padding: 10px;
-    text-decoration: none;
-    margin: 5px 0;
-    border-radius: 4px;
-}
-.sidebar a:hover {
-    background: orange;
-    color: #000;
-}
-.sidebar .logout {
-    background: red;
-    color: #fff;
-    margin-top: 20px;
+    color: #E63946; /* Accent Red */
     text-align: center;
-}
-.sidebar .logout:hover {
-    background: darkred;
+    margin-bottom: 40px;
+    font-size: 1.8rem;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    font-family: 'Montserrat', sans-serif;
 }
 
-/* Main Content */
+.sidebar a {
+  display: flex;
+    align-items: center;
+    gap: 12px; /* Space between icon and text */
+    color: #F5F5F5;
+    padding: 14px 18px;
+    margin: 8px 0;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: background 0.3s, box-shadow 0.3s, color 0.3s;
+}
+
+.sidebar a:hover,
+.sidebar a.active {
+    background-color: #E63946;
+    color: #fff;
+    box-shadow: 0 0 10px rgba(230, 57, 70, 0.8);
+ transform: translateX(4px); 
+}
+
+.sidebar .logout {
+    background-color: #06D6A0; /* Highlight Green */
+    color: #121212;
+    font-weight: 700;
+    padding: 15px;
+    text-align: center;
+    border-radius: 8px;
+    margin-top: auto;
+    margin-bottom: 0;
+    transition: background 0.3s, box-shadow 0.3s;
+}
+
+.sidebar .logout:hover {
+    background-color: #05c090;
+    box-shadow: 0 0 12px rgba(6, 214, 160, 0.8);
+    transform: none;
+}
+
+
+/* -------------------------------------- */
+/* --- 3. Main Content & Headings --- */
+/* -------------------------------------- */
+
 .main {
-    margin-left: 240px; /* pushes main content right so it’s not hidden */
-    padding: 20px;
-    color: white;
+   flex-grow: 1;
+    /* WARNING: Do not change padding here if you want to keep it tight on the Trainer Dashboard */
+    padding: 40px; 
+    display: flex;
+    flex-direction: column;
+    gap: 30px; 
+    overflow-y: auto;
+    max-height: 100vh;
 }
+
+.header {
+    background-color: #1A1A1A;
+    padding: 25px; 
+    border-radius: 12px;
+    /* Consistent shadow for header */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    /* INCREASED margin-top to push the header down from the top edge */
+    margin-top: 30px; 
+}
+
+.header h1 {
+    font-family: 'Montserrat', sans-serif;
+    color: #FFD166; /* Gold/Yellow accent */
+    font-size: 2rem;
+    margin: 0;
+}
+
+.header p {
+    color: #999;
+    font-size: 0.9rem;
+}
+
 h1, h2 {
-    color: orange;
+    font-family: 'Montserrat', sans-serif;
+    color: #FFD166; /* Gold Accent */
+    border-bottom: 2px solid #E63946;
+    padding-bottom: 12px;
+    margin-bottom: 25px; 
+    font-weight: 700;
+    font-size: 1.8rem;
 }
+
+/* Content Boxes (Matching Dashboard .box) */
 .box {
-    background: #111;
+    background-color: #1A1A1A;
+    padding: 30px; 
+    margin: 0; 
+    border-radius: 12px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+    border: 1px solid #333;
+}
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-top: 20px;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+th, td {
+    padding: 15px;
+    text-align: left;
+    border-bottom: 1px solid #333;
+    vertical-align: top;
+}
+
+th {
+    background: #2A2A2A;
+    color: #06D6A0; /* Green Accent */
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+}
+
+tr:nth-child(even) {
+    background-color: #1E1E1E;
+}
+
+tr:hover {
+    background-color: #2A2A2A;
+    transition: background-color 0.2s;
+}
+
+/* Form Elements */
+input, textarea, select {
+    width: 100%;
+    padding: 12px;
+    margin-top: 5px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    border: 1px solid #444;
+    background: #121212;
+    color: #fff;
+    font-size: 1rem;
+    font-family: 'Poppins', sans-serif;
+    transition: border 0.3s, box-shadow 0.3s;
+}
+
+input:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: #E63946;
+    box-shadow: 0 0 10px rgba(230, 57, 70, 0.6);
+}
+
+/* Buttons (Using the unified theme) */
+.btn {
+    background: #E63946; /* Red Accent */
+    color: #fff;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 15px;
+    font-weight: bold;
+    transition: background 0.3s, box-shadow 0.3s;
+}
+.btn:hover {
+    background: #FF595E;
+    box-shadow: 0 0 12px rgba(230, 57, 70, 0.5);
+}
+
+/* Status Message (Matching Dashboard flash/status) */
+.flash {
+    background: #222;
+    color: #06D6A0; /* Green text for success */
     padding: 15px;
     margin: 15px 0;
     border-radius: 8px;
-    box-shadow: 0 0 10px orange;
-}
-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-th, td {
-    padding: 10px;
-    border-bottom: 1px solid orange;
-    vertical-align: top;
-}
-.flash {
-    background: #0d2810;
-    color: #b8ffb8;
-    padding: 10px;
-    margin: 10px 0;
-    border-radius: 4px;
-}
-.btn {
-    background:orange;
-    color: #000;
-    padding: 5px 10px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    margin-top: 8px;
-}
-.btn:hover {
-    background: orange;
-}
-input, textarea, select {
-    width: 100%;
-    padding: 6px;
-    margin-top: 5px;
-    border-radius: 4px;
-    border: 1px solid #333;
-    background: #0b0b0b;
-    color: #fff;
+    border-left: 5px solid #06D6A0;
+    font-weight: 600;
 }
 
 /* Style for predefined plans */
@@ -103,30 +244,37 @@ input, textarea, select {
 }
 
 .plan-item {
-    margin-bottom: 15px;   /* space between plans */
-    padding: 10px;
+    margin-bottom: 15px;
+    padding: 0;
     border: 1px solid #333;
-    border-radius: 6px;
-    background: #111;
+    border-radius: 8px;
+    background: #1A1A1A;
+    overflow: hidden;
 }
 
 .plan-item summary {
     cursor: pointer;
-    font-size: 16px;
+    font-size: 1.1rem;
+    font-family: 'Montserrat', sans-serif;
     font-weight: bold;
-    color: orange;
+    color: #FFD166; /* Gold Accent */
     outline: none;
     list-style: none;
+    padding: 15px; 
+    background: #222;
+    transition: background 0.3s;
 }
 
 .plan-item summary:hover {
-    color: #b8ffb8;
+    background: #2A2A2A;
+    color: #E63946; /* Subtle hover color change */
 }
 
 .plan-item p {
-    margin: 10px 0 0 20px; /* indent inside expanded content */
+    padding: 15px;
+    margin: 0;
     color: #ddd;
-    line-height: 1.5;
-    font-size: 14px;
+    line-height: 1.6;
+    font-size: 0.95rem;
+    border-top: 1px dashed #333;
 }
-

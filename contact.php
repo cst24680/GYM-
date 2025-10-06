@@ -1,14 +1,28 @@
 <?php
+// Include the database connection file
+include "db.php";
+
 $message = "";
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $name = htmlspecialchars($_POST['name']);
-    $email = htmlspecialchars($_POST['email']);
-    $msg = htmlspecialchars($_POST['message']);
+    // Sanitize user input for display and database storage
+    // NOTE: mysqli_real_escape_string should be used if you stick with direct SQL insertion
+    $name = mysqli_real_escape_string($conn, htmlspecialchars($_POST['name']));
+    $email = mysqli_real_escape_string($conn, htmlspecialchars($_POST['email']));
+    $msg = mysqli_real_escape_string($conn, htmlspecialchars($_POST['message']));
     
-    // Here you can add logic to send an email or save to a database.
-    // Example: mail($to, $subject, $msg, $headers);
-    
-    $message = "<p class='success-message'>Thank you, $name! Your message has been received.</p>";
+    // --- Database Insertion Logic (Direct SQL - INSECURE) ---
+    // Using the 'contact' table confirmed by the user. 
+    // Subject column is omitted as requested.
+    $sql = "INSERT INTO contact (sender_name, sender_email, message, sent_at) 
+            VALUES ('$name', '$email', '$msg', NOW())";
+            
+    if (mysqli_query($conn, $sql)) {
+        $message = "<p class='success-message'>Thank you, $name! Your message has been received. We'll be in touch soon.</p>";
+    } else {
+        // Display an error message if the query fails
+        $message = "<p class='error-message'>Error saving message: " . mysqli_error($conn) . "</p>";
+    }
+    // --- End Database Insertion Logic ---
 }
 ?>
 <!DOCTYPE html>
@@ -17,25 +31,31 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Contact Us - IronFlex Gym</title>
-    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Racing+Sans+One&display=swap" rel="stylesheet">
-    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <!-- Importing Montserrat and Poppins fonts for theme consistency -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
     <style>
+        /* --- THEME COLORS MATCHING ADMIN/TRAINER DASHBOARD --- */
         :root {
-            --primary-color: #ffcc00;
-            --secondary-color: #ff6600;
-            --text-color: #f1f1f1;
-            --background-dark: #121212;
-            --form-bg: rgba(255, 255, 255, 0.08);
-            --input-border: rgba(255, 255, 255, 0.2);
+            --accent-red: #E63946;
+            --accent-gold: #FFD166;
+            --text-light: #F5F5F5;
+            --bg-dark: #121212;
+            --card-bg: rgba(26, 26, 26, 0.95);
+            --input-bg: #161616;
+            --input-border: #444;
         }
 
         body {
-            font-family: 'Lato', sans-serif;
-            background: var(--background-dark) url('https://images.unsplash.com/photo-1571019613454-1cb2f99b231b?q=80&w=2070&auto=format&fit=crop') no-repeat center center/cover;
+            font-family: 'Poppins', sans-serif;
+            background: var(--bg-dark);
+            /* Optional: Use a solid dark color or a simple dark pattern background */
+            background-image: none; 
             background-attachment: fixed;
             margin: 0;
             padding: 0;
-            color: var(--text-color);
+            color: var(--text-light);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -44,63 +64,54 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
         
         .contact-container {
-            background: rgba(0, 0, 0, 0.75);
-            backdrop-filter: blur(15px);
-            border-radius: 20px;
-            box-shadow: 0px 15px 40px rgba(0, 0, 0, 0.7);
-            padding: 40px 60px;
-            max-width: 650px;
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+            padding: 40px;
+            max-width: 550px;
             width: 90%;
             text-align: center;
-            animation: fadeIn 1s ease-in-out;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            animation: fadeIn 0.8s ease-in-out;
+            border: 1px solid var(--input-border);
             margin: 20px;
         }
 
         h1 {
-            font-family: 'Racing Sans One', sans-serif;
-            font-size: clamp(2.5rem, 6vw, 4rem);
-            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 20px;
-            letter-spacing: 2px;
-            text-shadow: 2px 2px 5px rgba(0,0,0,0.5);
-        }
-
-        h2 {
-            font-family: 'Racing Sans One', sans-serif;
-            font-size: 1.8rem;
-            color: var(--primary-color);
-            margin-bottom: 30px;
-            position: relative;
-        }
-
-        h2::after {
-            content: "";
-            width: 80px;
-            height: 4px;
-            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
-            display: block;
-            margin: 10px auto 0;
-            border-radius: 2px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 2.5rem;
+            color: var(--accent-gold); 
+            margin-bottom: 15px;
+            letter-spacing: 1px;
+            border-bottom: 2px solid var(--accent-red);
+            padding-bottom: 10px;
         }
 
         p {
-            font-size: 1.1rem;
+            font-size: 1rem;
             line-height: 1.6;
-            margin-bottom: 25px;
-            color: var(--text-color);
+            margin-bottom: 20px;
+            color: var(--text-light);
         }
 
         .success-message {
-            color: var(--primary-color);
-            font-weight: bold;
-            background: rgba(255, 204, 0, 0.1);
+            color: var(--accent-gold);
+            font-weight: 600;
+            background: rgba(255, 209, 102, 0.1); /* Light gold background */
             padding: 15px;
-            border-radius: 10px;
+            border-radius: 8px;
             margin-bottom: 20px;
-            border: 1px solid var(--primary-color);
+            border: 1px solid var(--accent-gold);
+        }
+        
+        .error-message {
+            color: var(--accent-red);
+            font-weight: 600;
+            background: rgba(230, 57, 70, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid var(--accent-red);
         }
 
         form {
@@ -113,23 +124,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             width: 100%;
             padding: 15px;
             border: 1px solid var(--input-border);
-            border-radius: 10px;
-            background: var(--form-bg);
-            color: var(--text-color);
+            border-radius: 8px;
+            background: var(--input-bg);
+            color: var(--text-light);
             font-size: 1rem;
+            font-family: 'Poppins', sans-serif;
             transition: border-color 0.3s ease, box-shadow 0.3s ease;
-            box-sizing: border-box; /* Ensures padding doesn't affect width */
+            box-sizing: border-box;
         }
         
         input:focus, textarea:focus {
             outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
+            border-color: var(--accent-red);
+            box-shadow: 0 0 10px rgba(230, 57, 70, 0.5);
         }
 
         input[type="submit"] {
-            background: linear-gradient(45deg, var(--secondary-color), var(--primary-color));
-            color: var(--background-dark);
+            background-color: var(--accent-red); 
+            color: var(--text-light);
             font-weight: bold;
             cursor: pointer;
             text-transform: uppercase;
@@ -137,25 +149,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             border: none;
             padding: 15px;
             font-size: 1.1rem;
-            border-radius: 30px;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border-radius: 8px;
+            margin-top: 10px;
+            transition: background 0.3s ease, transform 0.3s ease;
         }
 
         input[type="submit"]:hover {
-            transform: translateY(-3px) scale(1.02);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+            background-color: #FF595E;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(230, 57, 70, 0.5);
         }
         
-        /* Placeholder styling for a modern look */
+        /* Placeholder styling */
         ::placeholder {
-            color: rgba(241, 241, 241, 0.5);
-        }
-        ::-webkit-input-placeholder {
-            color: rgba(241, 241, 241, 0.5);
-        }
-        :-moz-placeholder {
-            color: rgba(241, 241, 241, 0.5);
-            opacity: 1; /* override Firefox's opacity */
+            color: rgba(245, 245, 245, 0.5);
         }
         
         @keyframes fadeIn {
@@ -170,8 +177,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <div class="contact-container">
     <h1>Contact Us</h1>
     <p>
-        Ready to start your fitness journey? Have a question about our classes or membership plans? 
-        Fill out the form below, and we'll get back to you as soon as possible.
+       For any inquiries or support, simply send us a message — we’ll respond as quickly as possible.
     </p>
 
     <?php echo $message; ?>

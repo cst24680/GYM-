@@ -1,20 +1,27 @@
+/* ---------------------------------------------------- */
+/* ADMIN DASHBOARD STYLES (FLEXBOX LAYOUT FIX)          */
+/* ---------------------------------------------------- */
+
 body {
     margin: 0;
     font-family: 'Segoe UI', Tahoma, sans-serif;
     background: linear-gradient(145deg, #0d0d0d, #1a1a1a);
     color: #fff;
+    /* FIX: Use Flexbox to put sidebar and content side-by-side */
+    display: flex;
+    min-height: 100vh;
+    overflow: hidden; /* Hide scrollbar on the body */
 }
 
 /* Sidebar */
 .sidebar {
-     width: 250px;
+    width: 250px;
     background-color: #161616;
     padding: 30px 20px;
     box-shadow: 3px 0 15px rgba(0, 0, 0, 0.6);
     display: flex;
     flex-direction: column;
-    position: sticky;
-    top: 0;
+    /* Removed redundant position: sticky since body is fixed height */
     height: 100vh;
 }
 
@@ -64,19 +71,24 @@ body {
 }
 
 .logout:hover{
-      background-color: #05c090;
+    background-color: #05c090;
     box-shadow: 0 0 10px rgba(6, 214, 160, 0.6);
 }
 
 /* Content */
 .content {
-    margin-left: 300px;
-    padding: 30px;
+    /* FIX: Remove fixed margin and allow content to fill remaining space */
+    flex-grow: 1;
+    /* ADJUSTED: Reduced padding from 30px to 20px on all sides */
+    padding: 20px; 
+    overflow-y: auto; /* Allow content area to scroll */
+    max-height: 100vh; /* Contain height to viewport */
 }
 
 h1 {
     color: #ff9800;
     font-size: 28px;
+    margin-bottom: 20px; /* Added spacing below title */
 }
 
 /* Buttons */
@@ -89,6 +101,7 @@ button {
     border-radius: 5px;
     cursor: pointer;
     transition: 0.3s;
+    margin-bottom: 10px; /* Added margin below buttons */
 }
 
 button:hover {
@@ -99,23 +112,24 @@ button:hover {
 .section {
     margin-top: 20px;
     background: rgba(40, 40, 40, 0.6);
-    padding: 15px;
+    padding: 20px; /* Increased internal padding */
     border-radius: 10px;
     backdrop-filter: blur(5px);
     box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-    margin-right: 20px; 
+    margin-right: 0; /* Removed margin-right */
 }
 
 table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 15px;
+    margin-top: 20px; /* Increased margin above table */
 }
 
 th {
     padding: 12px;
     text-align: left;
-    border-bottom:solid#E63946;
+    /* FIX: Corrected missing space and used color variable */
+    border-bottom: 2px solid #E63946; 
     font-weight: bold;
 }
 
@@ -133,9 +147,10 @@ tr:hover {
     display: none;
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.7);
+    background: rgba(0,0,0,0.8); /* Slightly darker overlay */
     justify-content: center;
     align-items: center;
+    z-index: 1000;
     animation: fadeIn 0.3s ease;
 }
 
@@ -145,48 +160,80 @@ tr:hover {
 }
 
 .modal-content {
-    background: rgba(30, 30, 30, 0.95);
-    padding: 30px; /* more space inside */
+    background: rgba(30, 30, 30, 1); /* Solid dark background */
+    padding: 30px; 
     border-radius: 12px;
-    width: 500px; /* make it wider */
-    max-width: 90%; /* prevent overflow on small screens */
+    width: 500px; 
+    max-width: 90%; 
     animation: slideUp 0.4s ease;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6); /* Stronger shadow */
     display: flex;
     flex-direction: column;
-    gap: 15px; /* equal vertical spacing */
+    gap: 15px; 
 }
 
 .modal-content h3 {
     color: #ff9800;
-    margin-bottom: 10px;
-    font-size: 24px; /* slightly larger heading */
+    margin-bottom: 15px; /* Increased margin */
+    font-size: 24px; 
     text-align: center;
 }
 
 /* Inputs with equal padding and full width */
+.modal-content label {
+    color: #FFD166; /* Highlight labels */
+    font-weight: 600;
+    margin-bottom: 5px;
+    margin-top: 5px;
+}
+
+.modal-content form {
+    display: flex;
+    flex-direction: column;
+    gap: 5px; /* Tighter spacing inside the form */
+}
+
 .modal-content input,
 .modal-content select {
     width: 100%;
     padding: 12px;
-    border: none;
+    border: 1px solid #444; /* Added subtle border */
     border-radius: 6px;
-    background: rgba(50, 50, 50, 0.9);
+    background: #121212; /* Darker input background */
     color: white;
     font-size: 14px;
     box-sizing: border-box;
+    margin-bottom: 10px;
 }
 
 /* Buttons */
 .modal-content .button-group {
     display: flex;
-    justify-content: space-between;
-    gap: 10px;
+    justify-content: flex-end;
+    gap: 15px; /* Increased gap between buttons */
+    margin-top: 15px;
 }
 
-.modal-content button {
-    flex: 1;
-    padding: 10px;
-    font-size: 15px;
+.modal-content button[type="submit"] {
+    flex: none; /* Do not stretch the save button */
     font-weight: bold;
+    padding: 10px 20px;
+}
+
+.modal-content button[type="button"] {
+    flex: none;
+    background: #444;
+}
+.modal-content button[type="button"]:hover {
+    background: #666;
+}
+/* Confirmation Modal Specific Styles */
+#confirmModal .modal-content {
+    width: 350px;
+    text-align: center;
+}
+#confirmModal .message {
+    font-size: 1.1rem;
+    margin-bottom: 20px;
+    color: #ccc;
 }

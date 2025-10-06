@@ -4,52 +4,70 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>About Us - IronFlex Gym</title>
+
   <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Racing+Sans+One&display=swap" rel="stylesheet">
-  <!-- Font Awesome for Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&family=Montserrat:wght@700&display=swap" rel="stylesheet">
+  <!-- Font Awesome -->
   <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+
   <style>
+    /* --- THEME COLORS MATCHING ADMIN/TRAINER DASHBOARD --- */
+    :root {
+      --accent-red: #E63946;
+      --accent-gold: #FFD166;
+      --text-light: #F5F5F5;
+      --bg-dark: #121212;
+      --card-bg: rgba(26, 26, 26, 0.95);
+      --input-bg: #161616;
+      --input-border: #444;
+    }
+
+    /* Base */
     body {
-      font-family: 'Lato', sans-serif;
-      background: url('images/gym-bg.jpg') no-repeat center center/cover;
+      font-family: 'Poppins', sans-serif;
+      background: var(--bg-dark);
+      color: var(--text-light);
       margin: 0;
       padding: 0;
-      color: #fff;
       display: flex;
       justify-content: center;
       align-items: flex-start;
       min-height: 100vh;
     }
 
+    /* Container */
     .about-container {
-      background: rgba(0, 0, 0, 0.65);
+      background: var(--card-bg);
       backdrop-filter: blur(15px);
-      border-radius: 20px;
-      box-shadow: 0px 12px 35px rgba(0,0,0,0.7);
+      border: 1px solid var(--input-border);
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.8);
       padding: 60px;
       max-width: 1100px;
       margin: 60px auto;
       animation: fadeIn 1s ease-in-out;
     }
 
+    /* Headings */
     h1, h2 {
-      font-family: 'Racing Sans One', sans-serif;
       text-align: center;
-      margin-bottom: 20px;
       letter-spacing: 1px;
+      margin-bottom: 20px;
     }
 
     h1 {
+      font-family: 'Montserrat', sans-serif;
       font-size: 3rem;
-      background: linear-gradient(45deg, #ffcc00, #ff6600);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      color: var(--accent-gold);
       margin-bottom: 25px;
+      border-bottom: 2px solid var(--accent-red);
+      display: inline-block;
+      padding-bottom: 10px;
     }
 
     h2 {
-      font-size: 2.2rem;
-      color: #ffb400;
+      font-size: 2rem;
+      color: var(--accent-red);
       margin: 50px 0 25px;
       position: relative;
     }
@@ -57,19 +75,20 @@
     h2::after {
       content: "";
       width: 80px;
-      height: 4px;
-      background: linear-gradient(90deg, #ffcc00, #ff6600);
+      height: 3px;
+      background: var(--accent-gold);
       display: block;
       margin: 10px auto 0;
       border-radius: 2px;
     }
 
+    /* Text */
     p {
       line-height: 1.8;
       font-size: 1.05rem;
       margin-bottom: 20px;
       text-align: center;
-      color: #f1f1f1;
+      color: #ddd;
     }
 
     /* Unique Features Section */
@@ -81,25 +100,27 @@
     }
 
     .unique-item {
-      background: rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.05);
       padding: 30px 20px;
       border-radius: 16px;
       text-align: center;
       transition: transform 0.4s ease, box-shadow 0.4s ease;
       opacity: 0;
       transform: translateY(40px);
+      border: 1px solid var(--input-border);
     }
 
     .unique-item h3 {
-      font-family: 'Racing Sans One', sans-serif;
+      font-family: 'Montserrat', sans-serif;
       font-size: 1.4rem;
       margin-bottom: 12px;
-      color: #ffcc00;
+      color: var(--accent-gold);
     }
 
     .unique-item:hover {
       transform: translateY(-10px) scale(1.05);
       box-shadow: 0px 12px 25px rgba(0,0,0,0.6);
+      border-color: var(--accent-red);
     }
 
     /* Team Section */
@@ -116,6 +137,7 @@
       overflow: hidden;
       cursor: pointer;
       transition: transform 0.4s ease, box-shadow 0.4s ease;
+      border: 1px solid var(--input-border);
     }
 
     .team-member img {
@@ -136,8 +158,7 @@
       left: 0;
       right: 0;
       height: 100%;
-      background: rgba(0,0,0,0.78);
-      color: #fff;
+      background: rgba(0,0,0,0.8);
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -155,54 +176,24 @@
     }
 
     .overlay h4 {
-      font-family: 'Racing Sans One', sans-serif;
-      color: #ffcc00;
+      font-family: 'Montserrat', sans-serif;
+      color: var(--accent-gold);
       font-size: 1.4rem;
       margin-bottom: 8px;
     }
 
     .overlay p {
       font-size: 1rem;
-      color: #ff8800;
+      color: var(--accent-red);
       margin-bottom: 10px;
     }
 
     .overlay span {
       font-size: 0.9rem;
-      color: #ddd;
+      color: #ccc;
     }
 
-    /* Call to Action */
-    .cta-section {
-      margin-top: 60px;
-      text-align: center;
-    }
-
-    .cta-section h2 {
-      font-size: 2rem;
-      color: #fff;
-      margin-bottom: 20px;
-    }
-
-    .cta-btn {
-      padding: 14px 35px;
-      font-size: 1.1rem;
-      border: none;
-      border-radius: 30px;
-      cursor: pointer;
-      font-weight: bold;
-      background: linear-gradient(45deg, #ff8800, #ffcc00);
-      color: #000;
-      transition: all 0.3s ease;
-    }
-
-    .cta-btn:hover {
-      background: linear-gradient(45deg, #ffcc00, #ff8800);
-      transform: scale(1.08);
-      box-shadow: 0px 8px 20px rgba(0,0,0,0.6);
-    }
-
-    /* Animations */
+    /* Animation */
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(30px); }
       to { opacity: 1; transform: translateY(0); }
@@ -212,15 +203,13 @@
 <body>
 
   <div class="about-container">
-    <!-- Gym Intro -->
-    <h1>About IronFlex Gym</h1>
+    <h1>About FitX Gym</h1>
     <p>
-      Welcome to <strong>IronFlex Gym</strong> – where strength, health, and transformation come together.  
+      Welcome to <strong>FitX Gym</strong> — where strength, health, and transformation come together.  
       Our mission is to empower every member with expert training, personalized nutrition, and modern tools 
       to achieve their fitness goals.
     </p>
 
-    <!-- What Makes Us Unique -->
     <h2>What Makes Us Unique</h2>
     <div class="unique-list">
       <div class="unique-item">
@@ -235,13 +224,8 @@
         <h3><i class="fas fa-calendar-alt"></i> Gym Calendar</h3>
         <p>Organized training schedules, classes, and events to keep you consistent.</p>
       </div>
-      <div class="unique-item">
-        <h3><i class="fas fa-weight"></i> BMI Analyzer</h3>
-        <p>Smart BMI tracking to monitor progress and adjust your plan effectively.</p>
-      </div>
     </div>
 
-    <!-- Meet the Team -->
     <h2>Meet the Team</h2>
     <div class="team-grid">
       <div class="team-member">
@@ -249,7 +233,7 @@
         <div class="overlay">
           <h4>Sarah Johnson</h4>
           <p>Certified Nutritionist</p>
-          <span>Specializes in creating personalized diet plans for weight loss, muscle gain, and overall health. 8+ years of experience.</span>
+          <span>Specializes in creating personalized diet plans for weight loss, muscle gain, and overall health.</span>
         </div>
       </div>
       <div class="team-member">
@@ -277,15 +261,9 @@
         </div>
       </div>
     </div>
-
-    <!-- Call to Action -->
-    <div class="cta-section">
-      <h2>Ready to Transform Your Fitness Journey?</h2>
-      <button class="cta-btn">Join Now</button>
-    </div>
   </div>
 
-  <!-- JS Scroll Reveal -->
+  <!-- Scroll reveal effect -->
   <script>
     function revealOnScroll() {
       const elements = document.querySelectorAll('.unique-item, .team-member');
