@@ -1,6 +1,7 @@
 <?php
 session_start();
 include "db.php";
+include "helpers.php"; // Include helpers.php for categorization
 
 // Check if trainer is logged in
 if (!isset($_SESSION['Trainer_id'])) {
@@ -17,14 +18,14 @@ $trainer = mysqli_fetch_assoc($trainer_res);
 
 // Fetch members assigned to this trainer
 $members_sql = "
-    SELECT m.Mem_id, m.Mem_name, m.Mem_email, m.Goal_type, m.BMI, m.Plan_name
+    SELECT m.Mem_id, m.Mem_name, m.Mem_email, m.Mem_age, m.Goal_type, m.BMI, m.Plan_name
     FROM member_registration m
     WHERE m.Trainer_id = $trainer_id
 ";
 $members_res = mysqli_query($conn, $members_sql);
 
-// Fetch workout plans created by this trainer
-$plans_sql = "SELECT Plan_type_id, Workout_type FROM plan_type WHERE Trainer_id = $trainer_id";
+// Fetch workout plans (corrected column name)
+$plans_sql = "SELECT Plan_type_id, Workout_type FROM plan_type";
 $plans_res = mysqli_query($conn, $plans_sql);
 
 // Fetch feedback given to this trainer
@@ -54,11 +55,10 @@ $active_section = 'profile';
 <html>
 <head>
     <title>Trainer Dashboard</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="trainer.css">
     <style>
         .box {
-            display: none !important; /* Hide all sections by default */
+            display: none !important;
             flex-direction: column;
         }
         .box.active {
@@ -81,53 +81,43 @@ $active_section = 'profile';
             color: #999;
             font-size: 0.9rem;
         }
-        table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-            margin-top: 20px;
-            border-radius: 8px;
-            overflow: hidden;
-        }
-        table th, table td {
-            padding: 15px;
-            text-align: left;
-            border-bottom: 1px solid #333;
-        }
-        table th {
-            background: #2A2A2A;
-            color: #06D6A0;
-            font-weight: 700;
-            text-transform: uppercase;
-            font-size: 0.9rem;
-        }
-        table tr:last-child td {
-            border-bottom: none;
-        }
-        table tr:nth-child(even) {
-            background-color: #1E1E1E;
-        }
-        table tr:hover {
-            background-color: #2A2A2A;
-            transition: background-color 0.2s;
-        }
     </style>
 </head>
 <body onload="setActiveSection('<?php echo $active_section; ?>')">
 
-<!-- Sidebar -->
+<!-- SIDEBAR WITH EMOJIS -->
 <div class="sidebar">
     <h2>Trainer Panel</h2>
-    <a class="menu-link active" data-target="profile" onclick="showSection(this)">Dashboard</a>
-    <a class="menu-link" data-target="members" onclick="showSection(this)">Assigned Members</a>
-    <a class="menu-link" data-target="assign" onclick="showSection(this)">Assign Workout</a>
-    <a class="menu-link" data-target="manage" onclick="showSection(this)">Manage Workouts</a>
-    <a class="menu-link" data-target="attendance" onclick="showSection(this)">Attendance</a>
-    <a class="menu-link" data-target="feedback" onclick="showSection(this)">View Feedback</a>
-    <a class="logout-btn" href="logout.php">Logout</a>
+
+    <a class="menu-link active" data-target="profile" onclick="showSection(this)">
+        🏠 Dashboard
+    </a>
+
+    <a class="menu-link" data-target="members" onclick="showSection(this)">
+        👥 Assigned Members
+    </a>
+
+    <a class="menu-link" data-target="assign" onclick="showSection(this)">
+        💪 Assign Workout
+    </a>
+
+    <a class="menu-link" data-target="manage" onclick="showSection(this)">
+        📋 Manage Workouts
+    </a>
+
+    <a class="menu-link" data-target="attendance" onclick="showSection(this)">
+        📅 Attendance
+    </a>
+
+    <a class="menu-link" data-target="feedback" onclick="showSection(this)">
+        💬 View Feedback
+    </a>
+
+    <a class="logout-btn" href="logout.php">
+        🚪 Logout
+    </a>
 </div>
 
-<!-- Main content -->
 <div class="content">
     
     <div class="header" id="welcomeHeader">
@@ -137,36 +127,39 @@ $active_section = 'profile';
         </div>
     </div>
 
-    <!-- Profile Section -->
+    <!-- PROFILE SECTION -->
     <div class="box active" id="profile">
         <h2>Your Profile Details</h2>
         <div class="profile-details-list">
-            <p><strong><i class="fas fa-envelope"></i> Email:</strong> <?php echo $trainer['Email']; ?></p>
-            <p><strong><i class="fas fa-phone"></i> Phone:</strong> <?php echo $trainer['Trainer_phno']; ?></p>
-            <p><strong><i class="fas fa-venus-mars"></i> Gender:</strong> <?php echo $trainer['Trainer_gender']; ?></p>
-            <p><strong><i class="fas fa-check-circle"></i> Status:</strong> <?php echo $trainer['Trainer_status']; ?></p>
-            <p><strong><i class="fas fa-dumbbell"></i> Speciality:</strong> <?php echo $trainer['Speciality']; ?></p>
+            <p><strong>📧 Email:</strong> <?php echo $trainer['Email']; ?></p>
+            <p><strong>📞 Phone:</strong> <?php echo $trainer['Trainer_phno']; ?></p>
+            <p><strong>🚻 Gender:</strong> <?php echo $trainer['Trainer_gender']; ?></p>
+            <p><strong>✅ Status:</strong> <?php echo $trainer['Trainer_status']; ?></p>
+            <p><strong>🏋️ Speciality:</strong> <?php echo $trainer['Speciality']; ?></p>
         </div>
     </div>
 
-    <!-- Members Section -->
+    <!-- ASSIGNED MEMBERS -->
     <div class="box" id="members">
         <h2>Members Assigned to You</h2>
         <?php if (mysqli_num_rows($members_res) > 0): ?>
             <table>
                 <tr>
                     <th>Name</th>
-                    <th>Email</th>
+                    <th>Age</th> 
                     <th>Goal</th>
-                    <th>BMI</th>
+                    <th>BMI (Category)</th> 
                     <th>Plan Name</th>
                 </tr>
-                <?php mysqli_data_seek($members_res,0); while($row = mysqli_fetch_assoc($members_res)): ?>
+                <?php mysqli_data_seek($members_res,0); while($row = mysqli_fetch_assoc($members_res)): 
+                    $bmi_category = getBMICategory($row['BMI']);
+                    $age_category = getAgeCategory($row['Mem_age']);
+                ?>
                     <tr>
                         <td><?php echo $row['Mem_name']; ?></td>
-                        <td><?php echo $row['Mem_email']; ?></td>
+                        <td><?php echo $row['Mem_age']; ?> (<?php echo $age_category; ?>)</td>
                         <td><?php echo $row['Goal_type']; ?></td>
-                        <td><?php echo $row['BMI']; ?></td>
+                        <td><?php echo $row['BMI']; ?> (<?php echo $bmi_category; ?>)</td>
                         <td><?php echo $row['Plan_name'] ? $row['Plan_name'] : 'No plan assigned'; ?></td>
                     </tr>
                 <?php endwhile; ?>
@@ -176,7 +169,7 @@ $active_section = 'profile';
         <?php endif; ?>
     </div>
 
-    <!-- Assign Workout Section -->
+    <!-- ASSIGN WORKOUT -->
     <div class="box" id="assign">
         <h2>Assign Workout</h2>
         <form action="assign_workout.php" method="POST" class="assign-form">
@@ -187,20 +180,15 @@ $active_section = 'profile';
                     echo "<option value='{$m['Mem_id']}'>{$m['Mem_name']}</option>";
                 } ?>
             </select>
-
-            <label>Workout Plan:</label>
+            
+            <label>Workout Plan Type:</label>
             <select name="Plan_type_id" required>
-                <option value="">-- Select Workout Plan --</option>
+                <option value="">-- Select Plan --</option>
                 <?php 
-                $plans_sql = "SELECT Plan_type_id, Workout_type FROM plan_type WHERE Trainer_id = $trainer_id";
-                $plans_res = mysqli_query($conn, $plans_sql);
-                if($plans_res && mysqli_num_rows($plans_res) > 0) {
-                    while($p = mysqli_fetch_assoc($plans_res)) {
-                        echo "<option value='{$p['Plan_type_id']}'>{$p['Workout_type']}</option>";
-                    }
-                } else {
-                    echo "<option value=''>No workouts available</option>";
-                }
+                mysqli_data_seek($plans_res, 0); 
+                while($p = mysqli_fetch_assoc($plans_res)) {
+                    echo "<option value='{$p['Plan_type_id']}'>{$p['Workout_type']}</option>";
+                } 
                 ?>
             </select>
 
@@ -214,13 +202,13 @@ $active_section = 'profile';
         </form>
     </div>
 
-    <!-- Manage Workouts Section -->
+    <!-- MANAGE WORKOUTS -->
     <div class="box" id="manage">
         <h2>Manage Workouts</h2>
         <a class="link" href="view_assigned_workouts.php">View / Edit / Delete Workouts</a>
     </div>
 
-    <!-- Attendance Section -->
+    <!-- ATTENDANCE -->
     <div class="box" id="attendance">
         <h2>Attendance Records</h2>
         <?php if(mysqli_num_rows($attendance_res) > 0): ?>
@@ -247,7 +235,7 @@ $active_section = 'profile';
         <?php endif; ?>
     </div>
 
-    <!-- Feedback Section -->
+    <!-- FEEDBACK -->
     <div class="box" id="feedback">
         <h2>Feedback from Members</h2>
         <?php if (mysqli_num_rows($feedback_res) > 0): ?>

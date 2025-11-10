@@ -15,7 +15,7 @@ body {
     color: #F5F5F5; /* Light text */
     min-height: 100vh;
     display: flex;
-    overflow: hidden; 
+    overflow: hidden;
     line-height: 1.6;
     font-size: 16px;
 }
@@ -23,9 +23,10 @@ body {
 /* Scrollbar Utility for main content if needed */
 .main-content::-webkit-scrollbar,
 .content-section::-webkit-scrollbar {
-    display: none; 
+    display: none;
 }
-.main-content, .content-section {
+.main-content,
+.content-section {
     scrollbar-width: none;
     -ms-overflow-style: none;
 }
@@ -37,20 +38,22 @@ body {
 .sidebar {
     width: 250px;
     background-color: #161616;
-    padding: 30px 20px;
-    box-shadow: 3px 0 15px rgba(0, 0, 0, 0.8); /* Stronger shadow */
+    padding: 20px 15px;
+    box-shadow: 3px 0 15px rgba(0, 0, 0, 0.8);
     display: flex;
     flex-direction: column;
-    position: sticky;
+    position: fixed;
     top: 0;
+    left: 0;
     height: 100vh;
+    overflow-y: hidden;
     z-index: 10;
 }
 
 .sidebar h2 {
-    color: #E63946; /* Accent Red */
+    color: #E63946;
     text-align: center;
-    margin-bottom: 40px;
+    margin-bottom: 25px;
     font-size: 1.8rem;
     font-weight: 800;
     letter-spacing: 1.5px;
@@ -58,21 +61,18 @@ body {
 }
 
 .sidebar a {
-    /* FIX: Set a fixed width to prevent text from causing horizontal shift */
-    width: 100%; 
+    width: 100%;
     display: flex;
     align-items: center;
-    gap: 12px; /* Space between icon and text */
+    gap: 12px;
     color: #F5F5F5;
-    /* ADJUSTED: Reduced horizontal padding from 18px to 15px for a buffer */
-    padding: 14px 15px; 
-    margin: 8px 0;
+    padding: 12px 15px;
+    margin: 6px 0;
     border-radius: 8px;
     text-decoration: none;
     font-size: 1rem;
     font-weight: 500;
-    transition: background 0.3s, box-shadow 0.3s, color 0.3s;
-    /* NEW FIX: Prevents text wrapping or measurement issues that cause width shift */
+    transition: background 0.3s, box-shadow 0.3s, color 0.3s, transform 0.2s;
     white-space: nowrap;
 }
 
@@ -81,18 +81,19 @@ body {
     background-color: #E63946;
     color: #fff;
     box-shadow: 0 0 10px rgba(230, 57, 70, 0.8);
-    /* Transform removed previously to prevent shift, keeping it removed */
+    transform: translateX(4px);
 }
 
 .sidebar a.active {
     background-color: #E63946;
-    border-left: none; /* Removed redundant left border */
+    border-left: none;
 }
 
 /* Updated logout button styling for Trainer dashboard consistency */
 .sidebar .logout,
+.sidebar .logout-btn,
 .logout-btn {
-    background-color: #06D6A0; /* Highlight Green */
+    background-color: #06D6A0;
     color: #121212;
     font-weight: 700;
     padding: 15px;
@@ -101,14 +102,13 @@ body {
     margin-top: auto;
     margin-bottom: 0;
     transition: background 0.3s, box-shadow 0.3s;
-    /* Ensure flex alignment for consistency with nav links if icons are used */
-    display: flex; 
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .sidebar .logout:hover,
+.sidebar .logout-btn:hover,
 .logout-btn:hover {
     background-color: #05c090;
     box-shadow: 0 0 12px rgba(6, 214, 160, 0.8);
@@ -121,35 +121,30 @@ body {
 
 .main-content,
 .content {
-      flex-grow: 1;
-    /* WARNING: Do not change padding here if you want to keep it tight on the Trainer Dashboard */
-    padding: 40px; 
+    flex-grow: 1;
+    margin-left: 250px;
+    padding: 40px;
     display: flex;
     flex-direction: column;
-    gap: 30px; 
+    gap: 30px;
     overflow-y: auto;
     max-height: 100vh;
 }
 
-
-
-/* Header Styles - Match Member Dashboard */
 .header {
     background-color: #1A1A1A;
-    /* Reduced vertical padding to prevent large gaps */
-    padding: 0 25px 25px 25px; 
+    padding: 0 25px 25px 25px;
     border-radius: 12px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-    /* FIX: Ensure no top margin */
-    margin-top: 0; 
+    margin-top: 0;
 }
 
 .header h1 {
     font-family: 'Montserrat', sans-serif;
-    color: #FFD166; /* Gold/Yellow accent */
+    color: #FFD166;
     font-size: 2rem;
     margin: 0;
-    padding-top: 25px; /* Pushes content down inside the header box */
+    padding-top: 25px;
 }
 
 .header p {
@@ -163,14 +158,14 @@ h2 {
     color: #FFD166;
     border-bottom: 2px solid #E63946;
     padding-bottom: 12px;
-    margin-bottom: 25px; 
+    margin-bottom: 25px;
     font-weight: 700;
     font-size: 1.8rem;
 }
 
 h3 {
     font-family: 'Montserrat', sans-serif;
-    color: #06D6A0; /* Green accent */
+    color: #06D6A0;
     border-bottom: 1px solid #333;
     padding-bottom: 8px;
     margin-bottom: 15px;
@@ -182,15 +177,13 @@ h3 {
 /* --- 4. Content Sections & Boxes --- */
 /* -------------------------------------- */
 
-/* Unifying .content-section and .box display */
 .content-section,
 .box {
     background-color: #1A1A1A;
-    padding: 30px; 
+    padding: 30px;
     border-radius: 12px;
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
-    /* Ensure no residual margin below boxes */
-    margin-bottom: 0; 
+    margin-bottom: 0;
     border: 1px solid #333;
     transition: box-shadow 0.3s;
 }
@@ -203,7 +196,6 @@ h3 {
     display: block;
 }
 
-/* Card elements - included for completeness if used in trainer dash */
 .dashboard-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -212,7 +204,7 @@ h3 {
 
 .card {
     background-color: #222222;
-    padding: 25px; 
+    padding: 25px;
     border-radius: 12px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -242,7 +234,7 @@ h3 {
     left: 0;
 }
 
-/* Profile Details List Style (used in both dashboards) */
+/* Profile Details List Style */
 .profile-details-list {
     display: flex;
     flex-direction: column;
@@ -263,14 +255,12 @@ h3 {
     font-weight: 600;
 }
 
-/* Trainer Icons (using member colors for consistency) */
 .profile-details-list i {
     color: #E63946;
     font-size: 1.1rem;
-    width: 20px; 
+    width: 20px;
     text-align: center;
 }
-
 
 /* -------------------------------------- */
 /* --- 5. Tables --- */
@@ -285,7 +275,8 @@ table {
     overflow: hidden;
 }
 
-table th, table td {
+table th,
+table td {
     padding: 15px;
     text-align: left;
     border-bottom: 1px solid #333;
@@ -293,7 +284,7 @@ table th, table td {
 
 table th {
     background: #2A2A2A;
-    color: #06D6A0; /* Green Accent */
+    color: #06D6A0;
     font-weight: 700;
     text-transform: uppercase;
     font-size: 0.9rem;
@@ -316,14 +307,13 @@ table tr:hover {
 /* --- 6. Forms and Controls --- */
 /* -------------------------------------- */
 
-/* General Form Elements */
 form label,
 .assign-form label {
     display: block;
     margin-top: 10px;
     margin-bottom: 5px;
     font-weight: 600;
-    color: #FFD166; /* Gold Accent */
+    color: #FFD166;
     text-align: left;
 }
 
@@ -357,10 +347,9 @@ form textarea:focus,
     box-shadow: 0 0 10px rgba(230, 57, 70, 0.6);
 }
 
-/* Form Buttons */
 form button,
 .assign-form button {
-    background-color: #E63946; /* Use red for action buttons */
+    background-color: #E63946;
     color: #fff;
     border: none;
     padding: 12px 20px;
@@ -377,7 +366,6 @@ form button:hover,
     box-shadow: 0 0 12px rgba(230, 57, 70, 0.5);
 }
 
-/* Assign Workout Form Layout (Flex Column) */
 .assign-form {
     display: flex;
     flex-direction: column;
@@ -395,22 +383,22 @@ form button:hover,
     margin-bottom: 15px;
 }
 
-/* Links/Action buttons */
 a.link {
     display: inline-block;
     margin-top: 10px;
     padding: 8px 12px;
-    background: #06D6A0; /* Green accent for non-destructive link actions */
+    background: #06D6A0;
     color: #121212;
     text-decoration: none;
     border-radius: 8px;
     font-weight: 600;
 }
+
 a.link:hover {
     background: #05c090;
 }
 
-/* Calendar (Matching member.css layout) */
+/* Calendar */
 .calendar {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
@@ -432,10 +420,17 @@ a.link:hover {
 }
 
 .event {
-    background: #E63946; /* Red Accent */
+    background: #E63946;
     color: white;
     padding: 5px;
     margin: 5px 0;
     border-radius: 4px;
     font-size: 13px;
+}
+
+/* Emoji icon spacing fix */
+.sidebar a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }

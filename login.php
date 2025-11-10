@@ -29,8 +29,18 @@ if (isset($_POST['login'])) {
     if ($result && mysqli_num_rows($result) === 1) {
         $row = mysqli_fetch_assoc($result);
 
-        // Verify MD5 password
-        if ($row['Password'] === md5($password)) {
+        // Verify password (supports bcrypt and legacy MD5)
+        $storedHash = $row['Password'];
+        $isValid = false;
+        if (!empty($storedHash)) {
+            if (strpos($storedHash, '$2y$') === 0 || strpos($storedHash, '$argon2') === 0) {
+                $isValid = password_verify($password, $storedHash);
+            } else {
+                $isValid = ($storedHash === md5($password));
+            }
+        }
+
+        if ($isValid) {
             $_SESSION['user_id'] = $row['Login_id'];
             $_SESSION['role'] = strtolower($row['User_type']);
             $_SESSION['email'] = $row['Email'];

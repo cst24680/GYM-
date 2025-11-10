@@ -31,7 +31,7 @@ body {
 }
 
 /* -------------------------------------- */
-/* --- 2. Sidebar --- */
+/* --- 2. Sidebar (FIXED POSITIONING) --- */
 /* -------------------------------------- */
 
 .sidebar {
@@ -41,9 +41,14 @@ body {
     box-shadow: 3px 0 15px rgba(0, 0, 0, 0.8); /* Stronger shadow */
     display: flex;
     flex-direction: column;
-    position: sticky;
+    
+    /* === FIX 1: Change to fixed position to prevent collapsing === */
+    position: fixed; 
     top: 0;
-    height: 100vh;
+    left: 0;
+    height: 100vh; 
+    /* ========================================================== */
+
     z-index: 10;
 }
 
@@ -108,7 +113,11 @@ body {
 
 .main-content {
     flex-grow: 1;
-    /* WARNING: Do not change padding here if you want to keep it tight on the Trainer Dashboard */
+    
+    /* === FIX 2: Add margin to push content past the fixed sidebar === */
+    margin-left: 250px;
+    /* ========================================================== */
+
     padding: 40px; 
     display: flex;
     flex-direction: column;

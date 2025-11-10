@@ -40,27 +40,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <h2>Submit Feedback</h2>
         <?php if ($message) echo "<p>$message</p>"; ?>
 
-        <form method="post">
-            <label>Target Type:</label>
-            <select name="target_type" required>
-                <option value="">-- Select --</option>
-                <option value="Trainer">Trainer</option>
-                <option value="Dietician">Dietician</option>
-                <option value="Gym">Gym</option>
-            </select><br><br>
+        <div style="max-width: 600px;"> 
+            <form method="post">
+                
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px;">Target Type:</label>
+                    <select name="target_type" required style="width: 100%; padding: 10px; box-sizing: border-box;">
+                        <option value="">-- Select --</option>
+                        <option value="Trainer">Trainer</option>
+                        <option value="Dietician">Dietician</option>
+                        <option value="Gym">Gym</option>
+                    </select>
+                </div>
 
-            <label>Target ID:</label>
-            <input type="number" name="target_id" placeholder="Enter ID of Trainer/Dietician" required><br><br>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px;">Target ID:</label>
+                    <input type="number" name="target_id" placeholder="Enter ID of Trainer/Dietician" required style="width: 100%; padding: 10px; box-sizing: border-box;">
+                </div>
 
-            <label>Rating (1-5):</label>
-            <input type="number" name="rating" min="1" max="5" required><br><br>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px;">Rating (1-5):</label>
+                    <input type="number" name="rating" min="1" max="5" required style="width: 100%; padding: 10px; box-sizing: border-box;">
+                </div>
 
-            <label>Comments:</label><br>
-            <textarea name="comments" rows="4" cols="50" placeholder="Write your feedback..."></textarea><br><br>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px;">Comments:</label>
+                    <textarea name="comments" rows="4" cols="50" placeholder="Write your feedback..." style="width: 100%; padding: 10px; box-sizing: border-box;"></textarea>
+                </div>
 
-            <button type="submit">Submit Feedback</button>
-        </form>
+                <button type="submit">Submit Feedback</button>
+            </form>
+        </div>
     </div>
 </body>
 </html>
-  

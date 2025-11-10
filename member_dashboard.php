@@ -6,6 +6,7 @@ include "helpers.php";
 if (!isset($_SESSION['Mem_id'])) {
     header("Location: login.php");
     exit();
+
 }
 
 $member_id = $_SESSION['Mem_id'];
@@ -13,6 +14,34 @@ $member_id = $_SESSION['Mem_id'];
 // Member details
 $memberQuery = mysqli_query($conn, "SELECT * FROM member_registration WHERE Mem_id = $member_id LIMIT 1");
 $member = mysqli_fetch_assoc($memberQuery);
+
+// --- 1. GLOBAL AGE CALCULATION/CORRECTION ---
+// This block ensures the age displayed is current and sets the definitive $calculated_age.
+$dob_str = $member['Mem_dob'] ?? null;
+$calculated_age = (int)$member['Mem_age']; // Start with stored age
+
+if ($dob_str && $dob_str !== '0000-00-00') {
+    try {
+        $dob = new DateTime($dob_str);
+        $today = new DateTime('today');
+        $new_calculated_age = $dob->diff($today)->y;
+        
+        // CRITICAL CHECK: Only update age if the calculation yields a sensible, positive age (e.g., age > 0)
+        if ($new_calculated_age > 0 && $new_calculated_age < 100) { 
+            $calculated_age = $new_calculated_age; 
+            
+            // Update the Mem_age column in DB for consistency
+            if ($new_calculated_age !== (int)$member['Mem_age']) {
+                mysqli_query($conn, "UPDATE member_registration SET Mem_age = $new_calculated_age WHERE Mem_id = $member_id");
+                $member['Mem_age'] = $new_calculated_age; // Update local array
+            }
+        }
+    } catch (Exception $e) {
+        // If DOB is invalid, calculated_age remains the stored value.
+    }
+}
+// --- END GLOBAL AGE CALCULATION ---
+
 
 // Fetch trainer
 $trainer = null;
@@ -46,10 +75,75 @@ function getInitials($name) {
 
 // Handle POST requests
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Assign trainer
+    if (isset($_POST['assign_trainer_id'])) {
+        $assignTrainerId = (int)$_POST['assign_trainer_id'];
+        mysqli_query($conn, "UPDATE member_registration SET Trainer_id = $assignTrainerId WHERE Mem_id = $member_id");
+        $trainerQuery = mysqli_query($conn, "SELECT * FROM trainer WHERE Trainer_id = $assignTrainerId LIMIT 1");
+        $trainer = mysqli_fetch_assoc($trainerQuery);
+        $message = "✅ Trainer assigned successfully.";
+        $active_section = "trainer";
+    }
+    // Assign dietician
+    if (isset($_POST['assign_dietician_id'])) {
+        $assignDieticianId = (int)$_POST['assign_dietician_id'];
+        mysqli_query($conn, "UPDATE member_registration SET Dietician_id = $assignDieticianId WHERE Mem_id = $member_id");
+        $dieticianQuery = mysqli_query($conn, "SELECT * FROM dietician WHERE Dietician_id = $assignDieticianId LIMIT 1");
+        $dietician = mysqli_fetch_assoc($dieticianQuery);
+        $message = "✅ Dietician assigned successfully.";
+        $active_section = "dietician";
+    }
     if (isset($_POST['diet_choice'])) {
         $diet_choice = $_POST['diet_choice'];
         $active_section = "dietician";
     }
+
+    // --- 2. HANDLE PROFILE UPDATE FORM ---
+    if (isset($_POST['update_profile'])) {
+        // 1. Sanitize and fetch new data
+        $new_weight = (float)$_POST['new_weight'];
+        $new_height_cm = (float)$_POST['new_height_cm']; 
+
+        // 2. Recalculate BMI 
+        $new_height_m = $new_height_cm / 100;
+        $new_bmi = 0;
+        
+        if ($new_height_m > 0 && $new_weight > 0) {
+            $new_bmi = round($new_weight / ($new_height_m * $new_height_m), 2);
+        } else {
+            $new_bmi = $member['BMI'];
+        }
+        
+        // FIX: Use the robustly calculated age, $calculated_age, for saving.
+        $current_age_to_save = $calculated_age; 
+
+        // 3. Update the database 
+        $update_sql = "
+            UPDATE member_registration 
+            SET Weight = $new_weight, 
+                Height = $new_height_cm,
+                BMI = $new_bmi,
+                Mem_age = $current_age_to_save
+            WHERE Mem_id = $member_id
+        ";
+
+        if (mysqli_query($conn, $update_sql)) {
+            $message = "✅ Profile updated successfully! BMI: $new_bmi, Age: $current_age_to_save.";
+            
+            // Re-fetch member data array for immediate display
+            $memberQuery = mysqli_query($conn, "SELECT * FROM member_registration WHERE Mem_id = $member_id LIMIT 1");
+            $member = mysqli_fetch_assoc($memberQuery);
+            
+            // Update local variables for the rest of the script
+            $calculated_age = (int)$member['Mem_age']; 
+
+            $active_section = "dashboard";
+        } else {
+            $message = "❌ Error updating profile: " . mysqli_error($conn);
+            $active_section = "dashboard";
+        }
+    }
+    // --- END PROFILE UPDATE HANDLER ---
 
     // Handle Feedback Form
     if (isset($_POST['feedback_submit'])) {
@@ -98,7 +192,7 @@ while ($row = mysqli_fetch_assoc($attendanceQuery)) {
 }
 $attendanceCount = count($attendanceRecords);
 
-// Determine BMI & Age categories
+// Re-determine BMI & Age categories based on the updated $member array
 $bmiCategory = function_exists('getBMICategory') ? getBMICategory($member['BMI']) : 'N/A';
 $ageCategory = function_exists('getAgeCategory') ? getAgeCategory($member['Mem_age']) : 'N/A';
 
@@ -119,7 +213,7 @@ $planQuery = mysqli_query($conn, "
 $dietPlan = mysqli_fetch_assoc($planQuery);
 
 if (!$dietPlan) {
-    // fallback to use templates
+    // If no assigned plan exists, fallback to use automated templates using CURRENT categories
     $dietPlan = function_exists('findTemplate') ? findTemplate($conn, $member['Goal_type'], $bmiCategory, $ageCategory, $diet_choice) : null;
 }
 
@@ -135,6 +229,73 @@ $schedule_res = mysqli_query($conn, $schedule_sql);
 $events = [];
 while ($row = mysqli_fetch_assoc($schedule_res)) {
     $events[] = $row;
+}
+
+// ---------- Personalized Recommendations ----------
+$memberGender = trim($member['Gender'] ?? '');
+$goalType = trim($member['Goal_type'] ?? '');
+
+function buildSpecialityPattern($goalType) {
+    $g = strtolower($goalType);
+    if (strpos($g, 'weight') !== false) return "%weight%";
+    if (strpos($g, 'muscle') !== false) return "%muscle%";
+    return "%fitness%";
+}
+
+$specPattern = buildSpecialityPattern($goalType);
+
+// Trainers with avg ratings, prefer same gender and matching speciality
+$safeGender = mysqli_real_escape_string($conn, $memberGender);
+$safePattern = mysqli_real_escape_string($conn, $specPattern);
+$trainer_sql = "
+    SELECT t.*, 
+           AVG(CASE WHEN f.target_type='Trainer' THEN f.rating END) AS avg_rating,
+           COUNT(CASE WHEN f.target_type='Trainer' THEN 1 END) AS rating_count,
+           (CASE WHEN '$safeGender' <> '' AND LOWER(t.Trainer_gender)=LOWER('$safeGender') THEN 1 ELSE 0 END) AS gender_match,
+           (CASE WHEN LOWER(t.Speciality) LIKE LOWER('$safePattern') THEN 1 ELSE 0 END) AS spec_match
+    FROM trainer t
+    LEFT JOIN feedback f ON f.target_id = t.Trainer_id
+    GROUP BY t.Trainer_id
+    ORDER BY 
+        spec_match DESC, 
+        gender_match DESC,
+        (AVG(CASE WHEN f.target_type='Trainer' THEN f.rating END) IS NULL) ASC,
+        AVG(CASE WHEN f.target_type='Trainer' THEN f.rating END) DESC,
+        rating_count DESC
+    LIMIT 5
+";
+
+// Dieticians with avg ratings, prefer same gender (if stored) and goal relevance (simple)
+$dietician_sql = "
+    SELECT d.*, 
+           AVG(CASE WHEN f.target_type='Dietician' THEN f.rating END) AS avg_rating,
+           COUNT(CASE WHEN f.target_type='Dietician' THEN 1 END) AS rating_count
+    FROM dietician d
+    LEFT JOIN feedback f ON f.target_id = d.Dietician_id
+    GROUP BY d.Dietician_id
+    ORDER BY 
+        (AVG(CASE WHEN f.target_type='Dietician' THEN f.rating END) IS NULL) ASC,
+        AVG(CASE WHEN f.target_type='Dietician' THEN f.rating END) DESC,
+        rating_count DESC
+    LIMIT 5
+";
+
+// Execute with manual binding (mysqli lacks named params); build safe query
+$recommended_trainers_res = mysqli_query($conn, $trainer_sql);
+$recommended_trainers = [];
+while ($r = mysqli_fetch_assoc($recommended_trainers_res)) { $recommended_trainers[] = $r; }
+
+$recommended_dieticians_res = mysqli_query($conn, $dietician_sql);
+$recommended_dieticians = [];
+while ($r = mysqli_fetch_assoc($recommended_dieticians_res)) { $recommended_dieticians[] = $r; }
+
+// Auto-assign a dietician if none is assigned: choose best recommendation
+if (!$dietician && count($recommended_dieticians) > 0) {
+    $autoDiet = $recommended_dieticians[0];
+    $autoId = (int)$autoDiet['Dietician_id'];
+    mysqli_query($conn, "UPDATE member_registration SET Dietician_id = $autoId WHERE Mem_id = $member_id");
+    $dietician = $autoDiet; // Reflect immediately in UI
+    $message = "✅ A dietician was automatically assigned based on your goal and ratings.";
 }
 ?>
 <!DOCTYPE html>
@@ -164,17 +325,24 @@ while ($row = mysqli_fetch_assoc($schedule_res)) {
         <p><?php echo date("l, M j, Y"); ?></p>
     </div>
 </header>
-
-
+    
     <div id="dashboard" class="content-section dashboard-view">
+        
+        <?php if ($message): ?><div style="
+            background: rgba(6, 214, 160, 0.2); 
+            color: #06D6A0; 
+            padding: 15px; 
+            margin-bottom: 30px; /* Use bottom margin for spacing */
+            border-radius: 8px; 
+            font-weight: 600;
+            border-left: 5px solid #06D6A0;
+        "><?php echo $message; ?></div><?php endif; ?>
         
         <div class="dashboard-grid">
             
             <div class="card profile-card">
                 <h4>Your Profile</h4>
                 
-                <!-- REMOVED: The block that displayed the initials 'L' has been removed here. -->
-
                 <div class="key-metrics-summary">
                     <p class="key-metric-line">
                         <strong>BMI:</strong> 
@@ -194,6 +362,21 @@ while ($row = mysqli_fetch_assoc($schedule_res)) {
                     <p><strong><i class="fas fa-ruler-vertical"></i> Height:</strong> <?php echo $member['Height']; ?> cm</p>
                     <p><strong><i class="fas fa-weight"></i> Weight:</strong> <?php echo $member['Weight']; ?> kg</p>
                 </div>
+
+                <button onclick="openProfileUpdateModal()" style="
+                    background: #E63946; /* Accent Red */ 
+                    color: white; 
+                    padding: 8px 15px;
+                    border: none;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    margin-top: 15px;
+                    font-weight: 600;
+                    width: 100%;
+                    transition: background 0.3s;
+                ">
+                    Update Vitals
+                </button>
             </div>
 
             <div class="card check-in-action-card">
@@ -249,6 +432,10 @@ while ($row = mysqli_fetch_assoc($schedule_res)) {
             <p><strong>Phone:</strong> <?php echo $dietician['Dietician_phno']; ?></p>
         <?php } ?>
 
+        <?php if (!$dietician) { ?>
+            <p>A dietician will be assigned automatically based on your goal and ratings.</p>
+        <?php } ?>
+
         <div class="diet-toggle">
             <form method="post">
                 <button type="submit" name="diet_choice" value="Veg" class="<?php echo ($diet_choice == 'Veg') ? 'active' : ''; ?>">Veg Plan</button>
@@ -260,12 +447,12 @@ while ($row = mysqli_fetch_assoc($schedule_res)) {
             <h3>Your <?php echo ucfirst($diet_choice); ?> Diet Plan</h3>
             <p><strong>Goal:</strong> <?php echo $member['Goal_type']; ?></p>
             <?php if (!empty($dietPlan['BMI_Category']) && !empty($dietPlan['Age_Category'])) { ?>
-                <p><strong>BMI Category:</strong> <?php echo $dietPlan['BMI_Category']; ?></p>
-                <p><strong>Age Category:</strong> <?php echo $dietPlan['Age_Category']; ?></p>
+                <p><strong>BMI Category:</strong> <?php echo $bmiCategory; ?></p>
+                <p><strong>Age Category:</strong> <?php echo $ageCategory; ?></p>
             <?php } ?>
             <pre><?php echo htmlspecialchars($dietPlan['Description']); ?></pre>
         <?php } else { ?>
-            <p>No <?php echo ucfirst($diet_choice); ?> plan available for your profile yet.</p>
+            <p>No <?php echo ucfirst($diet_choice); ?> plan available for your profile yet. (Your current BMI is <?php echo $member['BMI']; ?> and Age is <?php echo $member['Mem_age']; ?>).</p>
         <?php } ?>
     </div>
 
@@ -278,6 +465,55 @@ while ($row = mysqli_fetch_assoc($schedule_res)) {
             <p><strong>Gender:</strong> <?php echo $trainer['Trainer_gender']; ?></p>
             <p><strong>Status:</strong> <?php echo $trainer['Trainer_status']; ?></p>
             <p><strong>Speciality:</strong> <?php echo $trainer['Speciality']; ?></p>
+            <hr>
+            
+            <button type="button" onclick="toggleTrainerSection()" style="
+                background: #ff9800; 
+                color: #222; 
+                padding: 10px 15px; 
+                border: none; 
+                border-radius: 4px; 
+                cursor: pointer; 
+                margin-bottom: 15px;
+            ">
+                Change Trainer
+            </button>
+            
+            <div id="changeTrainerSection" style="display:none;">
+                <h3>Want to change your trainer?</h3>
+                <p>Here are recommended alternatives based on your goal and ratings.</p>
+                <table border="1" cellpadding="8" cellspacing="0" style="width:100%; border-collapse:collapse;">
+                    <tr style="background:#222;color:#ff9800;">
+                        <th>Name</th><th>Gender</th><th>Speciality</th><th>Phone</th><th>Rating</th><th></th>
+                    </tr>
+                    <?php foreach ($recommended_trainers as $t): ?>
+                    <tr>
+                        <td><?php echo htmlspecialchars($t['Trainer_name']); ?></td>
+                        <td><?php echo htmlspecialchars($t['Trainer_gender']); ?></td>
+                        <td><?php echo htmlspecialchars($t['Speciality']); ?></td>
+                        <td><?php echo htmlspecialchars($t['Trainer_phno']); ?></td>
+                        <td>
+                            <?php if ((int)$t['rating_count'] > 0) {
+                                echo number_format((float)$t['avg_rating'],1) . "/5 (" . (int)$t['rating_count'] . ")";
+                            } else {
+                                echo "New — no ratings yet";
+                            } ?>
+                        </td>
+                        <td>
+                            <form method="post" style="margin:0" onsubmit="return confirm('Are you sure about the changes?');">
+                                <input type="hidden" name="assign_trainer_id" value="<?php echo (int)$t['Trainer_id']; ?>">
+                                <button type="submit">Choose</button>
+                            </form>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                </table>
+            </div>
+            
+            <h3>Your Current Vitals</h3>
+            <p><strong>BMI:</strong> <?php echo $member['BMI']; ?> (<?php echo $bmiCategory; ?>)</p>
+            <p><strong>Age:</strong> <?php echo $member['Mem_age']; ?></p>
+
 
             <h3>Assigned Workout Routine</h3>
             <?php if (!empty($events)) { ?>
@@ -300,6 +536,34 @@ while ($row = mysqli_fetch_assoc($schedule_res)) {
             <?php } ?>
         <?php } else { ?>
             <p>No trainer assigned yet.</p>
+            <h3>Recommended Trainers</h3>
+            <p>Based on your goal (<?php echo htmlspecialchars($goalType); ?>), your gender<?php echo $memberGender?" (".htmlspecialchars($memberGender).")":""; ?>, and ratings.</p>
+            <table border="1" cellpadding="8" cellspacing="0" style="width:100%; border-collapse:collapse;">
+                <tr style="background:#222;color:#ff9800;">
+                    <th>Name</th><th>Gender</th><th>Speciality</th><th>Phone</th><th>Rating</th><th></th>
+                </tr>
+                <?php foreach ($recommended_trainers as $t): ?>
+                <tr>
+                    <td><?php echo htmlspecialchars($t['Trainer_name']); ?></td>
+                    <td><?php echo htmlspecialchars($t['Trainer_gender']); ?></td>
+                    <td><?php echo htmlspecialchars($t['Speciality']); ?></td>
+                    <td><?php echo htmlspecialchars($t['Trainer_phno']); ?></td>
+                    <td>
+                        <?php if ((int)$t['rating_count'] > 0) {
+                            echo number_format((float)$t['avg_rating'],1) . "/5 (" . (int)$t['rating_count'] . ")";
+                        } else {
+                            echo "New — no ratings yet";
+                        } ?>
+                    </td>
+                    <td>
+                        <form method="post" style="margin:0" onsubmit="return confirm('Are you sure about the changes?');">
+                            <input type="hidden" name="assign_trainer_id" value="<?php echo (int)$t['Trainer_id']; ?>">
+                            <button type="submit">Choose</button>
+                        </form>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+            </table>
         <?php } ?>
     </div>
 
@@ -315,7 +579,7 @@ while ($row = mysqli_fetch_assoc($schedule_res)) {
 
     <div id="feedback" class="content-section" style="display:none;">
         <h2>Give Feedback</h2>
-        <?php if ($message) echo "<p>$message</p>"; ?>
+        <?php if (isset($message) && $active_section === 'feedback') echo "<p>$message</p>"; ?>
         <form method="post">
             <label>Target Type:</label>
             <select name="target_type" id="target_type" required onchange="setTargetId()">
@@ -347,22 +611,22 @@ while ($row = mysqli_fetch_assoc($schedule_res)) {
         if ($feedbackQuery && mysqli_num_rows($feedbackQuery) > 0) {
             echo "<table border='1' cellpadding='8' cellspacing='0' style='width:100%; border-collapse:collapse;'>";
             echo "<tr style='background:#222; color:orange;'>
-                        <th>ID</th>
-                        <th>Target Type</th>
-                        <th>Target ID</th>
-                        <th>Rating</th>
-                        <th>Comments</th>
-                        <th>Date</th>
-                    </tr>";
+                    <th>ID</th>
+                    <th>Target Type</th>
+                    <th>Target ID</th>
+                    <th>Rating</th>
+                    <th>Comments</th>
+                    <th>Date</th>
+                </tr>";
             while ($fb = mysqli_fetch_assoc($feedbackQuery)) {
                 echo "<tr>
-                        <td>{$fb['feedback_id']}</td>
-                        <td>{$fb['target_type']}</td>
-                        <td>{$fb['target_id']}</td>
-                        <td>{$fb['rating']}</td>
-                        <td>{$fb['comments']}</td>
-                        <td>{$fb['created_at']}</td>
-                      </tr>";
+                    <td>{$fb['feedback_id']}</td>
+                    <td>{$fb['target_type']}</td>
+                    <td>{$fb['target_id']}</td>
+                    <td>{$fb['rating']}</td>
+                    <td>{$fb['comments']}</td>
+                    <td>{$fb['created_at']}</td>
+                </tr>";
             }
             echo "</table>";
         } else {
@@ -372,6 +636,48 @@ while ($row = mysqli_fetch_assoc($schedule_res)) {
     </div>
 
 </div>
+
+<div id="profileUpdateModal" class="modal" style="display:none;
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+    background: rgba(0, 0, 0, 0.8); z-index: 1000; justify-content: center; align-items: center;">
+    
+    <div class="modal-content" style="
+        background: #1A1A1A; padding: 30px; border-radius: 12px; width: 400px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.5); color: #F5F5F5;">
+        
+        <h3 style="color: #FFD166; border-bottom: 2px solid #E63946; padding-bottom: 10px; margin-bottom: 20px;">
+            Update Vitals
+        </h3>
+        
+        <form method="post">
+            <label style="display: block; margin-top: 10px;">Current Weight (kg):</label>
+            <input type="number" step="0.01" name="new_weight" value="<?php echo $member['Weight']; ?>" required style="width: 100%; padding: 10px; margin-top: 5px; border-radius: 4px; border: 1px solid #444; background: #121212; color: #fff;"><br>
+
+            <label style="display: block; margin-top: 10px;">Current Height (cm):</label>
+            <input type="number" step="1" name="new_height_cm" value="<?php echo $member['Height']; ?>" required style="width: 100%; padding: 10px; margin-top: 5px; border-radius: 4px; border: 1px solid #444; background: #121212; color: #fff;"><br>
+            
+            <p style="color:#999; font-size: 0.85em; margin: 15px 0;">
+                *Updating these values will recalculate your BMI and automatically fetch your new suggested plan.
+            </p>
+
+            <button type="submit" name="update_profile" style="background: #E63946; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; margin-top: 10px;">
+                Calculate & Update
+            </button>
+            <button type="button" onclick="document.getElementById('profileUpdateModal').style.display='none'" style="background: #333; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; margin-top: 10px; margin-left: 10px;">
+                Cancel
+            </button>
+        </form>
+    </div>
+</div>
+
+<div id="eventModal" class="modal">
+    <div class="modal-content">
+    <span class="close" onclick="closeModal()">&times;</span>
+    <h3 id="modalDate"></h3>
+    <div id="modalEvents"></div>
+    </div>
+</div>
+
 
 <script>
 function setActive(element) {
@@ -399,6 +705,21 @@ function showSection(sectionId) {
     // Optional: if you have a calendar loader
     if (sectionId === "calendar") {
         loadCalendar(events);
+    }
+}
+
+// NEW JS function
+function openProfileUpdateModal() {
+    document.getElementById('profileUpdateModal').style.display = 'flex';
+}
+
+// *** MODIFICATION: Added this new function ***
+function toggleTrainerSection() {
+    var section = document.getElementById('changeTrainerSection');
+    if (section.style.display === 'none' || section.style.display === '') {
+        section.style.display = 'block';
+    } else {
+        section.style.display = 'none';
     }
 }
 
@@ -506,14 +827,6 @@ document.addEventListener('DOMContentLoaded', () => {
     setTargetId();
 });
 </script>
-
-<div id="eventModal" class="modal">
-   <div class="modal-content">
-   <span class="close" onclick="closeModal()">&times;</span>
-   <h3 id="modalDate"></h3>
-   <div id="modalEvents"></div>
-   </div>
-</div>
 
 </body>
 </html>

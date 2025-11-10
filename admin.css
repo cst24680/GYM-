@@ -161,21 +161,23 @@ tr:hover {
 
 .modal-content {
     background: rgba(30, 30, 30, 1); /* Solid dark background */
-    padding: 30px; 
+    padding: 20px; 
     border-radius: 12px;
-    width: 500px; 
-    max-width: 90%; 
+    width: 720px; 
+    max-width: 95%; 
+    max-height: 88vh; /* Keep within viewport */
+    overflow-y: hidden; /* Avoid scroll when possible */
     animation: slideUp 0.4s ease;
     box-shadow: 0 10px 30px rgba(0,0,0,0.6); /* Stronger shadow */
     display: flex;
     flex-direction: column;
-    gap: 15px; 
+    gap: 10px; 
 }
 
 .modal-content h3 {
     color: #ff9800;
-    margin-bottom: 15px; /* Increased margin */
-    font-size: 24px; 
+    margin-bottom: 10px;
+    font-size: 20px; 
     text-align: center;
 }
 
@@ -183,41 +185,58 @@ tr:hover {
 .modal-content label {
     color: #FFD166; /* Highlight labels */
     font-weight: 600;
-    margin-bottom: 5px;
-    margin-top: 5px;
+    margin-bottom: 4px;
+    margin-top: 4px;
+    font-size: 13px;
 }
 
 .modal-content form {
     display: flex;
     flex-direction: column;
-    gap: 5px; /* Tighter spacing inside the form */
+    gap: 4px; /* default for non-grid forms */
+}
+
+/* Two-column layout for modal forms */
+.modal-content form.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 12px;
+}
+
+.modal-content .form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-content .full-row {
+    grid-column: 1 / -1;
 }
 
 .modal-content input,
 .modal-content select {
     width: 100%;
-    padding: 12px;
+    padding: 8px 10px;
     border: 1px solid #444; /* Added subtle border */
     border-radius: 6px;
     background: #121212; /* Darker input background */
     color: white;
-    font-size: 14px;
+    font-size: 13px;
     box-sizing: border-box;
-    margin-bottom: 10px;
+    margin-bottom: 6px;
 }
 
 /* Buttons */
 .modal-content .button-group {
     display: flex;
     justify-content: flex-end;
-    gap: 15px; /* Increased gap between buttons */
-    margin-top: 15px;
+    gap: 10px; /* Reduced gap */
+    margin-top: 8px;
 }
 
 .modal-content button[type="submit"] {
     flex: none; /* Do not stretch the save button */
     font-weight: bold;
-    padding: 10px 20px;
+    padding: 8px 16px;
 }
 
 .modal-content button[type="button"] {
@@ -229,11 +248,18 @@ tr:hover {
 }
 /* Confirmation Modal Specific Styles */
 #confirmModal .modal-content {
-    width: 350px;
+    width: 360px;
     text-align: center;
 }
 #confirmModal .message {
     font-size: 1.1rem;
-    margin-bottom: 20px;
+    margin-bottom: 14px;
     color: #ccc;
+}
+
+/* Responsive fallback: stack fields on small screens */
+@media (max-width: 640px) {
+  .modal-content { width: 95%; max-height: 90vh; overflow-y: auto; }
+  .modal-content form.form-grid { grid-template-columns: 1fr; }
+  .modal-content .full-row { grid-column: auto; }
 }

@@ -23,46 +23,68 @@ $res = mysqli_query($conn, $sql);
 <html>
 <head>
     <title>Assigned Workouts</title>
+    
+    <link rel="stylesheet" href="trainer.css">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    
     <style>
-        body { font-family: Arial, sans-serif; background: #000; color: white; padding: 20px; }
-        h1 { color: orange; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { padding: 10px; border-bottom: 1px solid orange; text-align: left; vertical-align: top; }
-        a.manage { padding: 6px 10px; background: orange; color: black; text-decoration: none; border-radius: 4px; }
-        a.manage:hover { background: darkorange; }
-        a.back { display:inline-block; margin-top:15px; padding:8px 12px; background:grey; color:white; text-decoration:none; border-radius:4px; }
+        /* Set the main page background to black */
+        body {
+            background-color: #0E0E0E;
+        }
+        
+        /* This styles the .page-container to look like the .box 
+        from your dashboard and centers it on the page.
+        */
+        .page-container {
+            /* Styling (to look like the dashboard) */
+            background-color: #1A1A1A;
+            padding: 30px; 
+            border-radius: 12px;
+            border: 1px solid #333;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+
+            /* Centering & Sizing */
+            max-width: 1200px;  /* Set a max width */
+            margin: 40px auto;  /* 40px top/bottom, auto left/right to center it */
+        }
     </style>
 </head>
 <body>
 
-<h1>Workouts You Have Assigned</h1>
+<div class="page-container">
 
-<?php if (mysqli_num_rows($res) > 0): ?>
-    <table>
-        <tr>
-            <th>Member</th>
-            <th>Workout</th>
-            <th>Date</th>
-            <th>Description</th>
-            <th>Action</th>
-        </tr>
-        <?php while ($row = mysqli_fetch_assoc($res)): ?>
-        <tr>
-            <td><?php echo htmlspecialchars($row['Mem_name']); ?></td>
-            <td><?php echo htmlspecialchars($row['Workout_type']); ?></td>
-            <td><?php echo htmlspecialchars($row['Workout_date']); ?></td>
-            <td><?php echo nl2br(htmlspecialchars($row['Notes'])); ?></td>
-            <td>
-                <a class="manage" href="manage_workout.php?id=<?php echo $row['Schedule_id']; ?>">Manage</a>
-            </td>
-        </tr>
-        <?php endwhile; ?>
-    </table>
-<?php else: ?>
-    <p>No workouts assigned yet.</p>
-<?php endif; ?>
+    <a class="back-link" href="trainer_dashboard.php">⬅ Back to Dashboard</a>
 
-<a class="back" href="trainer_dashboard.php">⬅ Back</a>
+    <h2>Workouts You Have Assigned</h2>
 
-</body>
+    <?php if (mysqli_num_rows($res) > 0): ?>
+        <table>
+            <tr>
+                <th>Member</th>
+                <th>Workout</th>
+                <th>Date</th>
+                <th>Description</th>
+                <th>Action</th>
+            </tr>
+            <?php while ($row = mysqli_fetch_assoc($res)): ?>
+            <tr>
+                <td><?php echo htmlspecialchars($row['Mem_name']); ?></td>
+                <td><?php echo htmlspecialchars($row['Workout_type']); ?></td>
+                <td><?php echo htmlspecialchars($row['Workout_date']); ?></td>
+                <td><?php echo nl2br(htmlspecialchars($row['Notes'])); ?></td>
+                <td>
+                    <a class="action-link edit" href="manage_workout.php?id=<?php echo $row['Schedule_id']; ?>">Manage</a>
+                </td>
+            </tr>
+            <?php endwhile; ?>
+        </table>
+    <?php else: ?>
+        <p>No workouts assigned yet.</p>
+    <?php endif; ?>
+
+</div> </body>
 </html>
